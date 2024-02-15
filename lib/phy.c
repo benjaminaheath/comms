@@ -12,13 +12,12 @@ void destroy_phy(Physical* phy){
     free(phy);
 }
 
-void send_phy(Physical* phy, uint8_t byte){
+void send_phy_byte(Physical* phy, uint8_t byte){
     phy->chan_send = byte;
 }
 
-uint8_t recv_phy(Physical* phy){
+uint8_t recv_phy_byte(Physical* phy){
     phy->chan_recv = __channel(phy);
-
 }
 
 void print_phy(Physical* phy){

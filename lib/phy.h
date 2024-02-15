@@ -13,12 +13,20 @@ typedef struct {
     unsigned noise;
 } Physical;
 
+// phy constructor and destructor
 Physical* create_phy();
 void destroy_phy(Physical* phy);
-void send_phy(Physical* phy, uint8_t byte);
-uint8_t recv_phy(Physical* phy);
+
+// phy debug functions
+void send_phy_byte(Physical* phy, uint8_t byte);
+uint8_t recv_phy_byte(Physical* phy);
 void print_phy(Physical* phy);
 
+// phy services
+void send_phy();
+void phy_phy();
+
+//internal methods
 static uint8_t __channel(Physical* phy);
 static uint8_t __noise(Physical* phy, uint8_t byte);
 
