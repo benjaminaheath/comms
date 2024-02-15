@@ -1,23 +1,11 @@
 #include "phy.h"
 
-Physical* create_phy(){
-    Physical* phy = (Physical*) malloc(sizeof(Physical));
-    phy->chan_send = 0;
-    phy->chan_recv = 0;
-    phy->noise = (unsigned) (PHY_NOISE_FREQ * RAND_MAX);
-    return phy;
+void send_phy(Physical* phy, DLL_frame dll_frame){
+
 }
 
-void destroy_phy(Physical* phy){
-    free(phy);
-}
+recv_callback_phy phy_phy(Physical* phy){
 
-void send_phy_byte(Physical* phy, uint8_t byte){
-    phy->chan_send = byte;
-}
-
-uint8_t recv_phy_byte(Physical* phy){
-    phy->chan_recv = __channel(phy);
 }
 
 void print_phy(Physical* phy){
@@ -25,6 +13,27 @@ void print_phy(Physical* phy){
     print_byte(phy->chan_recv);
     printf(" \n");
 }
+
+static Physical* __create_phy(){
+    Physical* phy = (Physical*) malloc(sizeof(Physical));
+    phy->chan_send = 0;
+    phy->chan_recv = 0;
+    phy->noise = (unsigned) (PHY_NOISE_FREQ * RAND_MAX);
+    return phy;
+}
+
+static void __destroy_phy(Physical* phy){
+    free(phy);
+}
+
+static void __send_phy_byte(Physical* phy, uint8_t byte){
+    phy->chan_send = byte;
+}
+
+static uint8_t __recv_phy_byte(Physical* phy){
+    phy->chan_recv = __channel(phy);
+}
+
 
 static uint8_t __channel(Physical* phy){
     #ifdef PHY_CLEAR_CHANNEL

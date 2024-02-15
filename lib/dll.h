@@ -2,11 +2,11 @@
 #define DLL_H
 
 typedef struct {
-    
+   int temp; 
 } DLL;
 
 typedef struct {
-
+    int temp;
 } DLL_frame;
 
 // dll constructor and destructor
