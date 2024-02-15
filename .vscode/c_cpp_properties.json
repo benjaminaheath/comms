@@ -4,8 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${default}",
-                "C:\\Users\\benja\\Documents\\Programming\\comms\\src\\include",
-                "C:\\Users\\benja\\Documents\\Programming\\comms\\src\\config"
+                "C:\\Users\\benja\\Documents\\Programming\\comms\\src",
+                "C:\\Users\\benja\\Documents\\Programming\\comms\\lib"
 
             ],
             "defines": [

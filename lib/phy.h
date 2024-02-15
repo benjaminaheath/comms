@@ -18,5 +18,7 @@ void send_phy(Physical* phy, uint8_t byte);
 uint8_t recv_phy(Physical* phy);
 void print_phy(Physical* phy);
 
+static uint8_t __channel(Physical* phy);
+static uint8_t __noise(uint8_t byte);
 
 #endif

@@ -2,6 +2,8 @@
 
 Physical* create_phy(){
     Physical* phy = (Physical*) malloc(sizeof(Physical));
+    phy->chan_send = 0;
+    phy->chan_recv = 0;
     return phy;
 }
 
@@ -19,7 +21,8 @@ uint8_t recv_phy(Physical* phy){
 }
 
 void print_phy(Physical* phy){
-
+    print_byte(phy->chan_send);
+    print_byte(phy->chan_recv);
 }
 
 static uint8_t __channel(Physical* phy){

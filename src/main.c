@@ -1,6 +1,8 @@
 #include "main.h"
 
 int main() {
-    print_byte(66);
+    Physical* phy = create_phy();
+    Sim* sim = create_sim(phy);
+    print_sim(sim);
     return 0;
 }
