@@ -10,6 +10,7 @@
 typedef struct {
     uint8_t chan_send;
     uint8_t chan_recv;
+    unsigned noise;
 } Physical;
 
 Physical* create_phy();
@@ -19,6 +20,6 @@ uint8_t recv_phy(Physical* phy);
 void print_phy(Physical* phy);
 
 static uint8_t __channel(Physical* phy);
-static uint8_t __noise(uint8_t byte);
+static uint8_t __noise(Physical* phy, uint8_t byte);
 
 #endif

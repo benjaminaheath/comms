@@ -4,12 +4,14 @@
 #include <stdio.h>
 
 #include "phy.h"
+
 typedef struct {
     unsigned long ticks; 
     Physical* sim_phy;
 } Sim;
 
 Sim* create_sim(Physical* sim_phy);
+void update_sim(Sim* sim);
 void print_sim(Sim* sim);
 void destroy_sim(Sim* sim);
 

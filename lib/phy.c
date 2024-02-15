@@ -4,6 +4,7 @@ Physical* create_phy(){
     Physical* phy = (Physical*) malloc(sizeof(Physical));
     phy->chan_send = 0;
     phy->chan_recv = 0;
+    phy->noise = (unsigned) (PHY_NOISE_FREQ * RAND_MAX);
     return phy;
 }
 
@@ -23,21 +24,25 @@ uint8_t recv_phy(Physical* phy){
 void print_phy(Physical* phy){
     print_byte(phy->chan_send);
     print_byte(phy->chan_recv);
+    printf(" \n");
 }
 
 static uint8_t __channel(Physical* phy){
     #ifdef PHY_CLEAR_CHANNEL
-    return phy->chan_send;
+        return phy->chan_send;
     #elif defined(PHY_NOISY_CHANNEL)
-    return __noise(phy->chan_send);
+        return __noise(phy, phy->chan_send);
     #endif
 }
 
-static uint8_t __noise(uint8_t byte){
-    // flip a random bit if this is a noisy frame
-    if(rand() % PHY_NOISE_FREQ){
-        uint8_t mask = 1 << rand() % 8; // create a mask to flip a single bit
-        return byte ^ mask;
+static uint8_t __noise(Physical* phy, uint8_t byte){
+    // flip a random bit if this is a noisy bit
+    uint8_t mask = 0x00;
+    for(int b = 0; b < 8; ++b){
+        if(rand() < phy->noise) {
+
+            mask |= 1 << b; // create mask to XOR (flip) bit b
+        }
     }
-    return byte;
+    return byte ^ mask;
 }

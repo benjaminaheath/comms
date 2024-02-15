@@ -7,8 +7,12 @@ Sim* create_sim(Physical* sim_phy) {
     return sim;
 }
 
+void update_sim(Sim* sim) {
+    sim->ticks += 1;
+}
+
 void print_sim(Sim* sim) {
-    printf("%lu\n",sim->ticks);
+    printf("%lu: ",sim->ticks);
     print_phy(sim->sim_phy);
 }
 
