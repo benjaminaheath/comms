@@ -1,23 +1,20 @@
 #ifndef DLL_H
 #define DLL_H
 
-#include <stdint.h>
+#include "net.h"
 
-typedef struct {
-   int temp; 
-} DLL;
+#include <stdint.h>
 
 typedef struct {
     uint8_t frame;
 } DLL_frame;
 
-// dll constructor and destructor
-DLL* create_dll();
-void destroy_dll();
+typedef NET_packet (*recv_callback_dll)();
 
 // dll services
 void send_dll();
-void link_dll();
+recv_callback_dll link_dll();
+NET_packet recv_dll();
 void service_dll();
 void close_dll();
 
