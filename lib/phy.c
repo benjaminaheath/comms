@@ -1,11 +1,20 @@
 #include "phy.h"
 
-void send_phy(Physical* phy, DLL_frame dll_frame){
-
+recv_callback_phy phy_phy(Physical* phy){
+    printf("Initialise phy call\n");
+    return recv_phy;
 }
 
-recv_callback_phy phy_phy(Physical* phy){
+void send_phy(Physical* phy, DLL_frame dll_frame){
+    printf("phy send call\n");
+    __send_phy_byte(phy,dll_frame.frame);
+}
 
+DLL_frame recv_phy(Physical* phy){
+    printf("phy recv callback call\n");
+    __recv_phy_byte(phy);
+    DLL_frame frm = {phy->chan_recv};  
+    return frm;
 }
 
 void print_phy(Physical* phy){
@@ -14,15 +23,20 @@ void print_phy(Physical* phy){
     printf(" \n");
 }
 
-static Physical* __create_phy(){
+Physical* create_phy(){
     Physical* phy = (Physical*) malloc(sizeof(Physical));
     phy->chan_send = 0;
     phy->chan_recv = 0;
-    phy->noise = (unsigned) (PHY_NOISE_FREQ * RAND_MAX);
+    #ifdef PHY_CLEAR_CHANNEL
+        phy->noise = 0;    
+    #elif defined(PHY_NOISY_CHANNEL)
+        phy->noise = (unsigned) (PHY_NOISE_FREQ * RAND_MAX);
+    #endif
+    
     return phy;
 }
 
-static void __destroy_phy(Physical* phy){
+void destroy_phy(Physical* phy){
     free(phy);
 }
 

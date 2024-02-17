@@ -1,12 +1,14 @@
 #ifndef DLL_H
 #define DLL_H
 
+#include <stdint.h>
+
 typedef struct {
    int temp; 
 } DLL;
 
 typedef struct {
-    int temp;
+    uint8_t frame;
 } DLL_frame;
 
 // dll constructor and destructor
