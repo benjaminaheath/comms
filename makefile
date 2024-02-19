@@ -23,11 +23,13 @@ $(BLD)/util.o: $(LIB)/util.c $(LIB)/util.h $(LIB)/comms_config.h
 
 # Physical (phy) layer object
 $(BLD)/phy.o: $(LIB)/phy.c $(LIB)/phy.h $(LIB)/dll.c $(LIB)/dll.h \
-		      $(LIB)/util.c $(LIB)/util.h $(LIB)/comms_config.h
+		      $(LIB)/util.c $(LIB)/util.h $(LIB)/comms_config.h \
+			  $(LIB)/structs.h
 	gcc -c $(LIB)/phy.c -o $(BLD)/phy.o
 
 # Data Link Layer (dll) object
-$(BLD)/dll.o: $(LIB)/dll.c $(LIB)/dll.h $(LIB)/net.h $(LIB)/comms_config.h
+$(BLD)/dll.o: $(LIB)/dll.c $(LIB)/dll.h $(LIB)/net.h $(LIB)/comms_config.h \
+			  $(LIB)/structs.h
 	gcc -c $(LIB)/dll.c -o $(BLD)/dll.o
 
 # Simulation (sim) object

@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-typedef struct {
-    uint8_t packet;
-} NET_packet;
+#include "structs.h"
 
 #endif 

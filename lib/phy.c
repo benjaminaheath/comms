@@ -10,22 +10,17 @@ void send_phy(Physical* phy, DLL_frame dll_frame){
     __send_phy_byte(phy,dll_frame.frame);
 }
 
-DLL_frame recv_phy(Physical* phy){
-    printf("phy recv callback call\n");
-    __recv_phy_byte(phy);
-    DLL_frame frm = {phy->chan_recv};  
-    return frm;
+uint8_t recv_phy(Physical* phy){
+    return phy->chan_recv;
 }
 
 void print_phy(Physical* phy){
-    print_byte(phy->chan_send);
     print_byte(phy->chan_recv);
     printf(" \n");
 }
 
 Physical* create_phy(){
     Physical* phy = (Physical*) malloc(sizeof(Physical));
-    phy->chan_send = 0;
     phy->chan_recv = 0;
     #ifdef PHY_CLEAR_CHANNEL
         phy->noise = 0;    
@@ -41,19 +36,14 @@ void destroy_phy(Physical* phy){
 }
 
 static void __send_phy_byte(Physical* phy, uint8_t byte){
-    phy->chan_send = byte;
+    phy->chan_recv = __channel(phy,byte);
 }
 
-static uint8_t __recv_phy_byte(Physical* phy){
-    phy->chan_recv = __channel(phy);
-}
-
-
-static uint8_t __channel(Physical* phy){
+static uint8_t __channel(Physical* phy, uint8_t byte){
     #ifdef PHY_CLEAR_CHANNEL
-        return phy->chan_send;
+        return byte;
     #elif defined(PHY_NOISY_CHANNEL)
-        return __noise(phy, phy->chan_send);
+        return __noise(phy, byte);
     #endif
 }
 
