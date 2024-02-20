@@ -12,8 +12,9 @@ typedef struct {
 
 typedef struct {
     recv_callback_phy recv_phy;
-    uint8_t* frame_buf;
-    size_t frame_buf_size;
+    uint8_t* buf;
+    unsigned int buf_size;
+    unsigned int buf_end;
 } DLL;
 
 typedef struct {

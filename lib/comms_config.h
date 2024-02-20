@@ -8,3 +8,5 @@
 #define PHY_NOISE_FREQ 0.9 // probability of bit flip
 // dll config
 #define DLL_BUF_MAX 64
+#define DLL_HEAD_BYTE 0x55
+#define DLL_FOOT_BYTE 0xAA
