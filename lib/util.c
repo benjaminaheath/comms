@@ -10,6 +10,10 @@ void print_byte(uint8_t byte){
     __print(byte);
 }
 
+uint8_t rand_byte(){
+    return rand() % 0xFF;
+}
+
 static void __print(uint8_t byte){
     #ifdef PRINT_BIN
         for(int i = 7; i >= 0; --i){
