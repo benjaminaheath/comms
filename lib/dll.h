@@ -12,7 +12,7 @@ void create_dll(DLL* dll);
 void destroy_dll(DLL* dll);
 
 // dll services
-void send_dll();
+void send_dll(DLL* dll, NET_packet net);
 recv_callback_dll link_dll();
 NET_packet recv_dll();
 void service_dll(Physical* phy, DLL* dll);

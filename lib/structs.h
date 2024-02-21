@@ -10,11 +10,18 @@ typedef struct {
     unsigned noise;
 } Physical;
 
+enum buf_mode {
+    WAIT,
+    LISTEN,
+    ESCAPE
+}
+
 typedef struct {
     recv_callback_phy recv_phy;
     uint8_t* buf;
     unsigned int buf_size;
     unsigned int buf_end;
+    buf_mode mode;
 } DLL;
 
 typedef struct {

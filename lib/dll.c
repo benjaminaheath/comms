@@ -4,6 +4,7 @@ void create_dll(DLL* dll){
     dll->buf = (uint8_t*) malloc(DLL_BUF_MAX * sizeof(uint8_t));
     dll->buf_size = DLL_BUF_MAX;
     dll->buf_end = 0;
+    dll->buf_mode = WAIT;
 }
 
 void destroy_dll(DLL* dll){
@@ -27,16 +28,30 @@ void service_dll(Physical* phy, DLL* dll){
     if(phy->byte_recv){ 
         // write to next address in buffer
         uint8_t byte = dll->recv_phy();
-        __buf_write(dll,byte);
-        // review the new dll byte buffer for a valid frame
-        for(int b = 0; b < dll->buf_end; ++b){
-            /*
-                Clear buffer of escaped bytes
-                Scan for header byte
-                If present, scan for footer byte
-            */
+        if(dll->buf_mode == WAIT){ // buffer in WAIT mode for head byte
+            if(byte == DLL_HEAD_BYTE){
+                dll->buf_mode == LISTEN;
+                __buf_write(dll,byte);
+            }
+            else{
+                return;
+            }
         }
-        // if full and no valid frame, flush buffer 
+        else if(dll->buf_mode == LISTEN){ // buffer in LISTEN mode storing bytes
+            if(byte == DLL_FOOT_BYTE){
+                dll->buf_mode == ESCAPE;
+            }
+            __buf_write(dll,byte);
+        }
+        else if(dll->buf_mode == ESCAPE){ // buffer in ESCAPE mode checking for escape or end
+            if(byte == DLL_FOOT_BYTE){ // just escaping
+                __buf_write(dll,byte); 
+            }
+            else{ // actual end of frame if non-escape
+                dll->buf_mode == WAIT; 
+                return;
+            }
+        }
     }
 }
 
