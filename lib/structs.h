@@ -14,14 +14,16 @@ enum buf_mode {
     WAIT,
     LISTEN,
     ESCAPE
-}
+};
+
+typedef uint8_t (*recv_callback_phy)(Physical*);
 
 typedef struct {
     recv_callback_phy recv_phy;
     uint8_t* buf;
     unsigned int buf_size;
     unsigned int buf_end;
-    buf_mode mode;
+    enum buf_mode mode;
 } DLL;
 
 typedef struct {
@@ -32,7 +34,6 @@ typedef struct {
     uint8_t packet;
 } NET_packet;
 
-typedef uint8_t (*recv_callback_phy)(Physical*);
 typedef NET_packet (*recv_callback_dll)();
 
 #endif

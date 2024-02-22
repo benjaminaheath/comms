@@ -4,7 +4,7 @@ void create_dll(DLL* dll){
     dll->buf = (uint8_t*) malloc(DLL_BUF_MAX * sizeof(uint8_t));
     dll->buf_size = DLL_BUF_MAX;
     dll->buf_end = 0;
-    dll->buf_mode = WAIT;
+    dll->mode = WAIT;
 }
 
 void destroy_dll(DLL* dll){
@@ -27,28 +27,28 @@ void service_dll(Physical* phy, DLL* dll){
     */
     if(phy->byte_recv){ 
         // write to next address in buffer
-        uint8_t byte = dll->recv_phy();
-        if(dll->buf_mode == WAIT){ // buffer in WAIT mode for head byte
+        uint8_t byte = dll->recv_phy(phy);
+        if(dll->mode == WAIT){ // buffer in WAIT mode for head byte
             if(byte == DLL_HEAD_BYTE){
-                dll->buf_mode == LISTEN;
+                dll->mode == LISTEN;
                 __buf_write(dll,byte);
             }
             else{
                 return;
             }
         }
-        else if(dll->buf_mode == LISTEN){ // buffer in LISTEN mode storing bytes
+        else if(dll->mode == LISTEN){ // buffer in LISTEN mode storing bytes
             if(byte == DLL_FOOT_BYTE){
-                dll->buf_mode == ESCAPE;
+                dll->mode == ESCAPE;
             }
             __buf_write(dll,byte);
         }
-        else if(dll->buf_mode == ESCAPE){ // buffer in ESCAPE mode checking for escape or end
+        else if(dll->mode == ESCAPE){ // buffer in ESCAPE mode checking for escape or end
             if(byte == DLL_FOOT_BYTE){ // just escaping
                 __buf_write(dll,byte); 
             }
             else{ // actual end of frame if non-escape
-                dll->buf_mode == WAIT; 
+                dll->mode == WAIT; 
                 return;
             }
         }

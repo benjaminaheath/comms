@@ -2,6 +2,7 @@
 #define DLL_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "comms_config.h"
 #include "net.h"
