@@ -1,13 +1,21 @@
 #include "util.h"
 
 void print_bytes(uint8_t* bytes, size_t num_bytes){
-    for(size_t b; b < num_bytes; ++b){ 
+    for(size_t b = 0; b < num_bytes; ++b){ 
         __print(bytes[b]);
     }
 }
 
 void print_byte(uint8_t byte){
     __print(byte);
+}
+
+uint8_t* rand_bytes(size_t num_bytes){
+    uint8_t* bytes_ptr = (uint8_t*) malloc(num_bytes * sizeof(uint8_t));
+    for(size_t b = 0; b < num_bytes; ++b){
+        bytes_ptr[b] = rand_byte();
+    }
+    return bytes_ptr;
 }
 
 uint8_t rand_byte(){
