@@ -2,11 +2,21 @@
 
 int main() {
     // set up physical instance and link callback
-    size_t b = 5;
-    for(int i = 1; i <= b; ++i){
-        uint8_t* rand = rand_bytes(i);
-        // print_bytes(rand, i);
-        printf("\n");
-    }
+    printf("STARTING SIMULATION\n");
+    dll_send_case();
+    dll_receive_case();
+    printf("ENDING SIMULATION\n");
     return 0;
+}
+
+void dll_send_case(){
+    printf("Start DLL Send Case\n");
+
+    printf("End DLL Send Case\n");
+}
+
+void dll_receive_case(){
+    printf("Start DLL Receive Case\n");
+
+    printf("End DLL Receive Case\n");
 }
