@@ -28,10 +28,12 @@ typedef struct {
 
 typedef struct {
     uint8_t frame;
+    size_t frame_size;
 } DLL_frame;
 
 typedef struct {
-    uint8_t packet;
+    uint8_t* packet;
+    size_t pkt_size;
 } NET_packet;
 
 typedef NET_packet (*recv_callback_dll)();
