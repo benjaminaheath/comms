@@ -27,8 +27,8 @@ typedef struct {
 } DLL;
 
 typedef struct {
-    uint8_t frame;
-    size_t frame_size;
+    uint8_t* frame;
+    size_t frame_len;
 } DLL_frame;
 
 typedef struct {
