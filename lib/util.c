@@ -62,11 +62,36 @@ uint8_t get_byte(uint8_t* bytes, size_t num_bytes, size_t index){
 
 
 uint8_t* get_bytes_from(uint8_t* bytes, size_t num_bytes, size_t index_start, size_t num_in_range){
-
+    size_t index_end = index_start + num_in_range;
+    if(index_end <= num_bytes){
+        uint8_t* bytes_from = __get_bytes(bytes,index_start,index_end);
+    } else {
+        fprintf(stderr,"get_bytes_from out of range\n");
+        exit(EXIT_FAILURE);
+    }
 }
 uint8_t* get_bytes_range(uint8_t* bytes, size_t num_bytes, size_t index_start, size_t index_end){
-
+    if(index_end <= num_bytes){
+        uint8_t* bytes_range = __get_bytes(bytes,index_start,index_end);
+    } else {
+        fprintf(stderr,"get_bytes_range out of range\n");
+        exit(EXIT_FAILURE);
+    }
 }
+
+static uint8_t* __get_bytes(uint8_t* bytes, size_t index_start, size_t index_end){
+    uint8_t* bytes_in_range = (uint8_t*) malloc((index_start - index_end)*sizeof(uint8_t));
+    if(bytes_in_range != NULL){
+        for(size_t b = index_start; b < index_end; ++b){
+            bytes_in_range[b-index_start] = bytes[b];
+        }
+    } else {
+        fprintf(stderr,"__get_bytes failed\n");
+        exit(EXIT_FAILURE);
+    }
+    return bytes_in_range;
+}
+
 static void __print(uint8_t byte){
     #ifdef PRINT_BIN
         for(int i = 7; i >= 0; --i){

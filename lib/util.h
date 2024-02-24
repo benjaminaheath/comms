@@ -24,4 +24,5 @@ uint8_t* get_bytes_range(uint8_t* bytes, size_t num_bytes, size_t index_start, s
 
 // internal functions
 static void __print(uint8_t byte);
+static uint8_t* __get_bytes(uint8_t* bytes, size_t index_start, size_t index_end);
 #endif
