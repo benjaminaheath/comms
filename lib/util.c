@@ -30,7 +30,7 @@ uint8_t rand_byte(){
 void append_byte(uint8_t** bytes, size_t* num_bytes, uint8_t byte){
     *bytes  = (uint8_t*) realloc(*bytes,(*num_bytes + 1) * sizeof(uint8_t));
     if(*bytes != NULL){ // allocation success
-        *bytes[*num_bytes] = byte;
+        (*bytes)[*num_bytes] = byte;
         ++(*num_bytes);
     } else { // error reallocating
         fprintf(stderr,"append_byte Failed\n");
