@@ -4,6 +4,7 @@ void print_bytes(uint8_t* bytes, size_t num_bytes){
     for(size_t b = 0; b < num_bytes; ++b){ 
         __print(bytes[b]);
     }
+    printf("\n");
 }
 
 void print_byte(uint8_t byte){
