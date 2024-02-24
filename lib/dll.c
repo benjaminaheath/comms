@@ -23,8 +23,8 @@ void send_dll(NET_packet pkt){
     uint8_t* len_payloads = __get_pkt_fragments(pkt.pkt_size,DLL_PAYLOAD_MAX);
 
     for(int f = 0; f < num_frames; ++f){
-        uint8_t* frame;
-        size_t frame_len;
+        uint8_t* frame = NULL;
+        size_t frame_len = 0;
 
         // generate control subframe
 
@@ -33,7 +33,6 @@ void send_dll(NET_packet pkt){
         // generate length subframe
         uint8_t payload_length = len_payloads[f];
         append_byte(&frame,&frame_len,payload_length);
-        ++frame_len;
 
         // append payload
 
