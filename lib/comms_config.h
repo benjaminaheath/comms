@@ -9,6 +9,12 @@
 
 // dll config
 #define DLL_BUF_MAX 64
-#define DLL_HEAD_BYTE 0x7E
-#define DLL_FOOT_BYTE 0x7E
+#define DLL_HEAD_BYTE 0xFF
+#define DLL_FOOT_BYTE 0xFF
 #define DLL_PAYLOAD_MAX 23
+#define DLL_HEAD_BYTES 1
+#define DLL_CONTROL_BYTES 2
+#define DLL_ADDRESS_BYTES 2
+#define DLL_LEN_BYTES 1
+#define DLL_CHECKSUM_BYTES 2
+#define DLL_FOOT_BYTES 1
