@@ -7,7 +7,9 @@ recv_callback_phy phy_phy(Physical* phy){
 
 void send_phy(Physical* phy, DLL_frame dll_frame){
     printf("phy send call\n");
-    __send_phy_byte(phy,dll_frame.frame);
+    for(size_t b = 0; b < dll_frame.frame_len; ++b){
+        __send_phy_byte(phy,dll_frame.frame[b]);
+    }
 }
 
 uint8_t recv_phy(Physical* phy){
