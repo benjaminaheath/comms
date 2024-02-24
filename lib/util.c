@@ -11,6 +11,10 @@ void print_byte(uint8_t byte){
     __print(byte);
 }
 
+void print_ptr(void* ptr){
+    printf("ptr:%p\n", ptr);
+}
+
 uint8_t* rand_bytes(size_t num_bytes){
     uint8_t* bytes_ptr = (uint8_t*) malloc(num_bytes * sizeof(uint8_t));
     for(size_t b = 0; b < num_bytes; ++b){
