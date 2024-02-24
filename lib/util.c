@@ -23,6 +23,28 @@ uint8_t rand_byte(){
     return rand() % 0xFF;
 }
 
+uint8_t* append_byte(uint8_t* bytes, size_t num_bytes, uint8_t byte){
+    uint8_t* appended_bytes = (uint8_t*) realloc((num_bytes + 1) * sizeof(uint8_t), bytes);
+    if(appended_bytes != NULL){
+        appended_bytes[num_bytes] = byte;
+    } else {
+        // error reallocating
+    }
+    return appended_bytes;
+}
+
+uint8_t* append_bytes(uint8_t* bytes, size_t num_bytes, uint8_t* new_bytes, size_t num_new_bytes){
+    uint8_t* appended_bytes = (uint8_t*) realloc((num_bytes + num_new_bytes) * sizeof(uint8_t), bytes);
+    if(new_bytes != NULL){
+        for(size_t b = 0; b < num_new_bytes; ++b){
+            appended_bytes[b + num_bytes] = new_bytes[b];
+        }
+    } else {
+        // error reallocating
+    }
+    return appended_bytes;
+}
+
 static void __print(uint8_t byte){
     #ifdef PRINT_BIN
         for(int i = 7; i >= 0; --i){
