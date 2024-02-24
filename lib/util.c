@@ -33,7 +33,7 @@ void append_byte(uint8_t** bytes, size_t* num_bytes, uint8_t byte){
         *bytes[*num_bytes] = byte;
         ++(*num_bytes);
     } else { // error reallocating
-        fprintf(stderr,"append_byte Failed");
+        fprintf(stderr,"append_byte Failed\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -46,14 +46,18 @@ void append_bytes(uint8_t** bytes, size_t* num_bytes, uint8_t* new_bytes, size_t
         }
         *num_bytes += num_new_bytes;
     } else {
-        fprintf(stderr,"append_bytes Failed");
+        fprintf(stderr,"append_bytes Failed\n");
         exit(EXIT_FAILURE);
     }
 
 }
 
 uint8_t get_byte(uint8_t* bytes, size_t num_bytes, size_t index){
-
+    if(index <= num_bytes){return bytes[index];}
+    else{
+        fprintf(stderr,"get_byte out of range\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 

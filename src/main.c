@@ -20,6 +20,11 @@ int main() {
     print_bytes(ptr,len_ptr);
     // dll_send_case();
     // dll_receive_case();
+    printf("%u ",get_byte(ptr,len_new_ptr,0));
+    printf("%u ",get_byte(ptr,len_new_ptr,1));
+    printf("%u ",get_byte(ptr,len_new_ptr,3));
+
+
     printf("ENDING SIMULATION\n");
     return 0;
 }

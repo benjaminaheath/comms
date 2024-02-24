@@ -35,7 +35,7 @@ void send_dll(NET_packet pkt){
         append_byte(&frame,&frame_len,payload_length);
 
         // append payload
-
+        // append_bytes(&frame,&frame_len,)
         // generate checksum
 
         // escaping for packet
