@@ -27,28 +27,42 @@ uint8_t rand_byte(){
     return rand() % 0xFF;
 }
 
-uint8_t* append_byte(uint8_t* bytes, size_t num_bytes, uint8_t byte){
-    uint8_t* appended_bytes = (uint8_t*) realloc((num_bytes + 1) * sizeof(uint8_t), bytes);
-    if(appended_bytes != NULL){
-        appended_bytes[num_bytes] = byte;
-    } else {
-        // error reallocating
+void append_byte(uint8_t** bytes, size_t* num_bytes, uint8_t byte){
+    *bytes  = (uint8_t*) realloc(*bytes,(*num_bytes + 1) * sizeof(uint8_t));
+    if(*bytes != NULL){ // allocation success
+        *bytes[*num_bytes] = byte;
+        ++(*num_bytes);
+    } else { // error reallocating
+        fprintf(stderr,"append_byte Failed");
+        exit(EXIT_FAILURE);
     }
-    return appended_bytes;
 }
 
-uint8_t* append_bytes(uint8_t* bytes, size_t num_bytes, uint8_t* new_bytes, size_t num_new_bytes){
-    uint8_t* appended_bytes = (uint8_t*) realloc((num_bytes + num_new_bytes) * sizeof(uint8_t), bytes);
-    if(new_bytes != NULL){
+void append_bytes(uint8_t** bytes, size_t* num_bytes, uint8_t* new_bytes, size_t num_new_bytes){
+    *bytes = (uint8_t*) realloc(*bytes, (*num_bytes + num_new_bytes) * sizeof(uint8_t));
+    if(*bytes != NULL){ // allocation success
         for(size_t b = 0; b < num_new_bytes; ++b){
-            appended_bytes[b + num_bytes] = new_bytes[b];
+            (*bytes)[*num_bytes + b] = new_bytes[b];
         }
+        *num_bytes += num_new_bytes;
     } else {
-        // error reallocating
+        fprintf(stderr,"append_bytes Failed");
+        exit(EXIT_FAILURE);
     }
-    return appended_bytes;
+
 }
 
+uint8_t get_byte(uint8_t* bytes, size_t num_bytes, size_t index){
+
+}
+
+
+uint8_t* get_bytes_from(uint8_t* bytes, size_t num_bytes, size_t index_start, size_t num_in_range){
+
+}
+uint8_t* get_bytes_range(uint8_t* bytes, size_t num_bytes, size_t index_start, size_t index_end){
+
+}
 static void __print(uint8_t byte){
     #ifdef PRINT_BIN
         for(int i = 7; i >= 0; --i){

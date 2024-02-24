@@ -5,9 +5,11 @@
 #include <stdlib.h>
 
 #include "comms_config.h"
-#include "util.h"
-#include "net.h"
 #include "structs.h"
+#include "util.h"
+
+#include "net.h"
+#include "phy.h"
 
 // dll helper functions
 void create_dll(DLL* dll);

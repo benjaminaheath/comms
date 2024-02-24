@@ -3,7 +3,22 @@
 int main() {
     // set up physical instance and link callback
     printf("STARTING SIMULATION\n");
-    dll_send_case();
+    uint8_t* ptr = NULL;
+    size_t len_ptr = 0;
+    append_byte(&ptr,&len_ptr,0xFF);
+    print_ptr(ptr);
+    print_bytes(ptr, len_ptr);
+
+    uint8_t* new_ptr = NULL;
+    size_t len_new_ptr = 0;
+    append_byte(&new_ptr, &len_new_ptr, 0xAA);
+    print_ptr(new_ptr);
+    print_bytes(new_ptr, len_new_ptr);
+
+    append_bytes(&ptr, &len_ptr, new_ptr, len_new_ptr);
+    print_ptr(ptr);
+    print_bytes(ptr,len_ptr);
+    // dll_send_case();
     // dll_receive_case();
     printf("ENDING SIMULATION\n");
     return 0;

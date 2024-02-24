@@ -29,7 +29,7 @@ $(BLD)/phy.o: $(LIB)/phy.c $(LIB)/phy.h $(LIB)/dll.c $(LIB)/dll.h \
 
 # Data Link Layer (dll) object
 $(BLD)/dll.o: $(LIB)/dll.c $(LIB)/dll.h $(LIB)/net.h $(LIB)/comms_config.h \
-			  $(LIB)/structs.h $(LIB)/util.h
+			  $(LIB)/structs.h $(LIB)/util.h $(LIB)/phy.h
 	gcc -c $(LIB)/dll.c -o $(BLD)/dll.o
 
 # Simulation (sim) object
