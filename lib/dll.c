@@ -22,19 +22,22 @@ void send_dll(NET_packet pkt){
     uint8_t num_frames = __get_num_pkt_fragments(pkt.pkt_size,DLL_PAYLOAD_MAX);
     uint8_t* len_frames = __get_pkt_fragments(pkt.pkt_size,DLL_PAYLOAD_MAX);
 
-    // generate control subframe
+    for(int f = 0; f < num_frames; ++f){
+        // generate control subframe
 
-    // generate addressing subframe
+        // generate addressing subframe
 
-    // generate length subframe
+        // generate length subframe
+        uint8_t frame_length = len_frames[f];
 
-    // generate checksum
+        // generate checksum
 
-    // escaping for packet
+        // escaping for packet
 
-    // wrap in header and footer
+        // wrap in header and footer
 
-    // transmit frame
+        // transmit frame
+    }
 }
 
 recv_callback_dll link_dll(DLL* dll){
