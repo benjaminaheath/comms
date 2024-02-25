@@ -20,7 +20,8 @@ void send_dll(NET_packet pkt){
     
     // packet fragmentation
     uint8_t num_frames = __get_num_pkt_fragments(pkt.pkt_size,DLL_PAYLOAD_MAX);
-    uint8_t* len_payloads = __get_pkt_fragments(pkt.pkt_size,DLL_PAYLOAD_MAX);
+    uint8_t* len_payloads = __get_len_pkt_fragments(pkt.pkt_size,DLL_PAYLOAD_MAX);
+    uint8_t** fragments = __get_pkt_fragments(len_payloads,num_frames,pkt.packet,pkt.pkt_size);
 
     for(int f = 0; f < num_frames; ++f){
         uint8_t* frame = NULL;
@@ -143,4 +144,20 @@ static uint8_t* __get_len_pkt_fragments(uint8_t pkt_length, uint8_t max_length){
     }
 
     return frag_lengths;
+}
+
+static uint8_t** __get_pkt_fragments(uint8_t* len_fragments, uint8_t num_fragments, uint8_t* pkt, size_t len_pkt){
+    uint8_t** fragments = (uint8_t**) malloc(num_fragments*sizeof(uint8_t*));
+    if(fragments != NULL){
+        size_t start_index = 0;
+        for(size_t f = 0; f < num_fragments; ++f){
+               size_t len_fragment = len_fragments[f]; 
+               fragments[f] = get_bytes_from(pkt,len_pkt,start_index,len_fragment);
+               start_index += len_fragment;
+        }
+    } else {
+        fprintf(stderr,"__get_pkt_fragments failed");
+        exit(EXIT_FAILURE);
+    }
+    return fragments;
 }
