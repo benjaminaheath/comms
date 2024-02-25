@@ -36,7 +36,8 @@ void send_dll(NET_packet pkt){
         append_byte(&frame,&frame_len,payload_length);
 
         // append payload
-        // append_bytes(&frame,&frame_len,)
+        append_bytes(&frame,&frame_len,fragments[f],len_payloads[f]);
+
         // generate checksum
 
         // escaping for packet
@@ -46,6 +47,7 @@ void send_dll(NET_packet pkt){
         // build frame struct
         
         // hand frame to PHY for transmission
+        print_bytes(frame,frame_len);
     }
 }
 
