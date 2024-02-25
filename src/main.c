@@ -14,8 +14,8 @@ void dll_send_case(){
         Generate bytes and fill out NET packet
         call send_dll to send
     */
-    uint8_t* bytes = rand_bytes(60); // generate 10 bytes
-    NET_packet pkt = {bytes, 60};
+    uint8_t* bytes = rand_bytes(30); // generate 10 bytes
+    NET_packet pkt = {bytes, 30};
     send_dll(pkt);
     printf("End DLL Send Case\n");
 }

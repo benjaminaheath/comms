@@ -16,6 +16,12 @@ enum buf_mode {
     ESCAPE
 };
 
+typedef enum frm_type {
+    ACK  = 0b00,
+    NACK = 0b01,
+    MSG  = 0b10
+} frm_type_t;
+
 typedef uint8_t (*recv_callback_phy)(Physical*);
 
 typedef struct {

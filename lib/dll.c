@@ -26,10 +26,21 @@ void send_dll(NET_packet pkt){
     for(int f = 0; f < num_frames; ++f){
         uint8_t* frame = NULL;
         size_t frame_len = 0;
+        // append header byte
+        append_byte(&frame,&frame_len,DLL_HEAD_BYTE);
 
         // generate control subframe
+        uint16_t ctrl = __get_control_subframe(f,(f == num_frames-1),MSG,0xC3);
+        uint8_t ctrl_high_byte = ctrl >> 8;
+        uint8_t ctrl_low_byte = ctrl;
+        append_byte(&frame,&frame_len,ctrl_high_byte);
+        append_byte(&frame,&frame_len,ctrl_low_byte);
 
         // generate addressing subframe
+        uint8_t src_byte = 0x00;
+        uint8_t dst_byte = 0xFF;
+        append_byte(&frame,&frame_len,src_byte);
+        append_byte(&frame,&frame_len,dst_byte);
 
         // generate length subframe
         append_byte(&frame,&frame_len,len_payloads[f]);
@@ -41,7 +52,7 @@ void send_dll(NET_packet pkt){
 
         // escaping for packet
 
-        // wrap in header and footer
+        // append footer byte
 
         // build frame struct
         
@@ -161,4 +172,21 @@ static uint8_t** __get_pkt_fragments(uint8_t* len_fragments, uint8_t num_fragmen
         exit(EXIT_FAILURE);
     }
     return fragments;
+}
+
+static uint16_t __get_control_subframe(uint8_t fragment, bool final, frm_type_t type, uint8_t seq_num){
+    uint16_t ctrl = 0;
+    if(!final){ctrl |= fragment & 0x7;}
+    else{ctrl |= 0x7;}
+
+    uint8_t protocol = 0; 
+    switch(DLL_PROTOCOL){
+        case 0: protocol = 0x0; break;
+        case 1: protocol = 0x3; break;
+        default: protocol = 0x0;
+    }
+    ctrl |= protocol << 3;
+    ctrl |= type << 5;
+    ctrl |= DLL_CHECKSUM << 7;
+    ctrl |= seq_num << 8;
 }
