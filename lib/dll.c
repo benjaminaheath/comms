@@ -32,8 +32,7 @@ void send_dll(NET_packet pkt){
         // generate addressing subframe
 
         // generate length subframe
-        uint8_t payload_length = len_payloads[f];
-        append_byte(&frame,&frame_len,payload_length);
+        append_byte(&frame,&frame_len,len_payloads[f]);
 
         // append payload
         append_bytes(&frame,&frame_len,fragments[f],len_payloads[f]);
