@@ -3,11 +3,8 @@
 int main() {
     // set up physical instance and link callback
     printf("STARTING SIMULATION\n");
-    uint8_t* bytes = rand_bytes(5);
-    size_t len_bytes = 5;
-    print_bytes(bytes,5);
-    insert_byte(&bytes,&len_bytes,0xFF,5);
-    print_bytes(bytes,6);
+    size_t len_bytes = 6;
+    uint8_t* bytes = rand_bytes(len_bytes);
     // dll_send_case();
     printf("ENDING SIMULATION\n");
     return 0;

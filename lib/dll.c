@@ -221,6 +221,20 @@ static uint16_t __get_CRC16(uint8_t* frame, size_t frame_len){
     
 }
 
-static uint16_t __get_parity(uint8_t* fame, size_t frame_len){
+static uint16_t __get_parity(uint8_t* frame, size_t frame_len){
     return (uint16_t) 0xC3C3;
+}
+
+static void __escape_frame(uint8_t** frame, size_t* frame_len){
+    // look through all bytes in frame, checking for unintentional flag/escapes
+    uint8_t byte;
+    for(size_t b = 0; b < (*frame_len); ++b){
+        byte = (*frame)[b];
+
+        // if flag (0x7E), prepend ESC (0x7D). if ESC (0x7D), prepend ESC (0x7D)
+        if(byte == 0x7E || byte == 0x7D){
+            insert_byte(frame,frame_len,DLL_ESC_BYTE,b);
+            ++b; // skip over new prepended ESC
+        }
+    }
 }
