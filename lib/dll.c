@@ -121,21 +121,25 @@ static uint8_t __get_num_pkt_fragments(uint8_t pkt_length, uint8_t max_length){
     return num_frames;
 }
 
-static uint8_t* __get_pkt_fragments(uint8_t pkt_length, uint8_t max_length){
+static uint8_t* __get_len_pkt_fragments(uint8_t pkt_length, uint8_t max_length){
     uint8_t num_frames = __get_num_pkt_fragments(pkt_length, max_length);
     uint8_t* frag_lengths = (uint8_t*) malloc(num_frames*sizeof(uint8_t));
-
-    if(num_frames > 1){
-        for(int p = 0; p < num_frames; ++p){
-            if(p < num_frames - 1){frag_lengths[p] = max_length;} //
-            else{
-                if(pkt_length % max_length == 0){frag_lengths[p] = max_length;}
-                else{frag_lengths[p] = pkt_length % max_length;}
+    if(frag_lengths != NULL){
+        if(num_frames > 1){
+            for(int p = 0; p < num_frames; ++p){
+                if(p < num_frames - 1){frag_lengths[p] = max_length;} //
+                else{
+                    if(pkt_length % max_length == 0){frag_lengths[p] = max_length;}
+                    else{frag_lengths[p] = pkt_length % max_length;}
+                }
             }
+        } else { // 1 frame packet length
+            // covers edge case of dummy payload: 1 frame, 0 payload
+            frag_lengths[0] = pkt_length;
         }
-    } else { // 1 frame packet length
-        // covers edge case of dummy payload: 1 frame, 0 payload
-        frag_lengths[0] = pkt_length;
+    } else {
+        fprintf(stderr,"__get_len_pkt_fragments failed");
+        exit(EXIT_FAILURE);
     }
 
     return frag_lengths;
