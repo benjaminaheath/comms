@@ -49,13 +49,18 @@ void send_dll(NET_packet pkt){
         append_bytes(&frame,&frame_len,fragments[f],len_payloads[f]);
 
         // generate checksum
+        uint16_t checksum = __get_checksum_subframe(frame,frame_len); 
+        uint8_t checksum_high_byte = checksum >> 8;
+        uint8_t checksum_low_byte = checksum;
+        append_byte(&frame,&frame_len,checksum_high_byte);
+        append_byte(&frame,&frame_len,checksum_low_byte);
 
         // escaping for packet
+        
 
         // append footer byte
+        append_byte(&frame,&frame_len,DLL_FOOT_BYTE);
 
-        // build frame struct
-        
         // hand frame to PHY for transmission
         print_bytes(frame,frame_len);
     }
@@ -189,4 +194,33 @@ static uint16_t __get_control_subframe(uint8_t fragment, bool final, frm_type_t 
     ctrl |= type << 5;
     ctrl |= DLL_CHECKSUM << 7;
     ctrl |= seq_num << 8;
+}
+
+static uint16_t __get_checksum_subframe(uint8_t* frame, size_t frame_len){
+    switch(DLL_CHECKSUM){
+        case 0: return __get_parity(frame, frame_len);
+        case 1: return __get_CRC16(frame,frame_len);
+    }
+}
+
+static uint16_t __get_CRC16(uint8_t* frame, size_t frame_len){
+    uint16_t crc = 0xFFFF; // Initial value
+    size_t i, j;
+
+    for (i = 0; i < frame_len; ++i) {
+        crc ^= (uint16_t)frame[i];
+        for (j = 0; j < 8; ++j) {
+            if (crc & 0x0001) {
+                crc = (crc >> 1) ^ DLL_CRC16_POLYNOMIAL;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    return crc;
+    
+}
+
+static uint16_t __get_parity(uint8_t* fame, size_t frame_len){
+    return (uint16_t) 0xC3C3;
 }
