@@ -18,6 +18,8 @@ uint8_t rand_byte();
 void append_byte(uint8_t** bytes, size_t* num_bytes, uint8_t new_byte);
 void append_bytes(uint8_t** bytes, size_t* num_bytes, uint8_t* new_bytes, size_t num_new_bytes);
 
+void insert_byte(uint8_t** bytes, size_t* num_bytes, uint8_t byte, size_t insert_index);
+
 uint8_t get_byte(uint8_t* bytes, size_t num_bytes, size_t index);
 uint8_t* get_bytes_from(uint8_t* bytes, size_t num_bytes, size_t index_start, size_t num_in_range);
 uint8_t* get_bytes_range(uint8_t* bytes, size_t num_bytes, size_t index_start, size_t index_end);
