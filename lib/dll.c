@@ -56,7 +56,7 @@ void send_dll(NET_packet pkt){
         append_byte(&frame,&frame_len,checksum_low_byte);
 
         // escaping for packet
-        
+        __escape_frame(&frame,&frame_len);        
 
         // append footer byte
         append_byte(&frame,&frame_len,DLL_FOOT_BYTE);
@@ -228,7 +228,7 @@ static uint16_t __get_parity(uint8_t* frame, size_t frame_len){
 static void __escape_frame(uint8_t** frame, size_t* frame_len){
     // look through all bytes in frame, checking for unintentional flag/escapes
     uint8_t byte;
-    for(size_t b = 0; b < (*frame_len); ++b){
+    for(size_t b = 1; b < (*frame_len); ++b){ // skip over header; no ESC needed
         byte = (*frame)[b];
 
         // if flag (0x7E), prepend ESC (0x7D). if ESC (0x7D), prepend ESC (0x7D)

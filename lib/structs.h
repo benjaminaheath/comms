@@ -22,7 +22,7 @@ typedef enum frm_type {
     MSG  = 0b10
 } frm_type_t;
 
-typedef uint8_t (*recv_callback_phy)(Physical*);
+typedef uint8_t (*recv_callback_phy)();
 
 typedef struct {
     recv_callback_phy recv_phy;
