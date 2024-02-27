@@ -114,6 +114,20 @@ static uint8_t* __get_bytes(uint8_t* bytes, size_t index_start, size_t index_end
     return bytes_in_range;
 }
 
+void remove_byte(uint8_t** bytes, size_t *num_byte, size_t index){
+    // start by shuffling bytes down and overwriting original
+    for(size_t b = index; b < (*num_byte); ++b){
+        (*bytes)[b] = (*bytes)[b+1];
+    }
+    //resize array to fit new size
+    --(*num_byte);
+    *bytes = (uint8_t*) realloc(*bytes,num_byte);
+    if(*bytes == NULL){
+        fprintf(stderr,"remove_byte failed\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
 static void __print(uint8_t byte){
     #ifdef PRINT_BIN
         for(int i = 7; i >= 0; --i){

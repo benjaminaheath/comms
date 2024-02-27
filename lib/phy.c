@@ -9,11 +9,18 @@ void send_phy(uint8_t byte){
 }
 
 uint8_t recv_phy(){
-    return chan;
+    // take oldest byte from channel queue; remove and return it
+    uint8_t byte = get_byte(&chan,&chan_size,0);
+    remove_byte(&chan,&chan_size,0);
+    return byte;
 }
 
 static void __send_phy_byte(uint8_t byte){
-    chan = __channel(byte);
+    // pass through channel (noise)
+    uint8_t chan_byte = __channel(byte);
+    // append byte to end of channel queue
+    append_byte(&chan,&chan_size,chan_byte); 
+    ++chan_size;
 }
 
 static uint8_t __channel(uint8_t byte){
