@@ -18,11 +18,11 @@ void destroy_dll(DLL* dll);
 // dll services
 void send_dll(NET_packet pkt);
 recv_callback_dll link_dll();
-NET_packet recv_dll();
-void service_dll(Physical* phy, DLL* dll);
+void service_dll();
 void close_dll();
 
 // dll internal methods
+void recv_dll(uint8_t byte);
 static void __buf_write(DLL* dll, uint8_t byte);
 static uint8_t __buf_read(DLL* dll, unsigned int index);
 static void __buf_flush(DLL* dll);

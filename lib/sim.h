@@ -7,10 +7,9 @@
 
 typedef struct {
     unsigned long ticks; 
-    Physical* sim_phy;
 } Sim;
 
-Sim* create_sim(Physical* sim_phy);
+Sim* create_sim();
 void update_sim(Sim* sim);
 void print_sim(Sim* sim);
 void destroy_sim(Sim* sim);

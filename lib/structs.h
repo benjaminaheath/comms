@@ -4,12 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct {
-    uint8_t chan_recv;
-    bool byte_recv;
-    unsigned noise;
-} Physical;
-
 enum buf_mode {
     WAIT,
     LISTEN,
@@ -22,7 +16,7 @@ typedef enum frm_type {
     MSG  = 0b10
 } frm_type_t;
 
-typedef uint8_t (*recv_callback_phy)();
+typedef void (*recv_callback_phy)(uint8_t);
 
 typedef struct {
     recv_callback_phy recv_phy;
@@ -42,6 +36,6 @@ typedef struct {
     size_t pkt_size;
 } NET_packet;
 
-typedef NET_packet (*recv_callback_dll)();
+typedef void (*recv_callback_dll)(uint8_t);
 
 #endif

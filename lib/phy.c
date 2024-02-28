@@ -1,27 +1,20 @@
 #include "phy.h"
 
+static const uint32_t noise = (unsigned) (PHY_NOISE_FREQ * RAND_MAX);
+
 recv_callback_phy phy_phy(){
     return recv_phy;
 }
 
-void send_phy(uint8_t byte){
-    __send_phy_byte(byte);
+void send_phy(uint8_t byte, recv_callback_phy recv){
+    recv(__channel(byte));
 }
 
-uint8_t recv_phy(){
-    // take oldest byte from channel queue; remove and return it
-    uint8_t byte = get_byte(&chan,&chan_size,0);
-    remove_byte(&chan,&chan_size,0);
-    return byte;
+void recv_phy(uint8_t byte){
+    recv_callback_dll dll_recv = link_dll();
+    dll_recv(byte);
 }
 
-static void __send_phy_byte(uint8_t byte){
-    // pass through channel (noise)
-    uint8_t chan_byte = __channel(byte);
-    // append byte to end of channel queue
-    append_byte(&chan,&chan_size,chan_byte); 
-    ++chan_size;
-}
 
 static uint8_t __channel(uint8_t byte){
     #ifdef PHY_CLEAR_CHANNEL

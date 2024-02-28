@@ -62,52 +62,27 @@ void send_dll(NET_packet pkt){
         append_byte(&frame,&frame_len,DLL_FOOT_BYTE);
 
         // hand frame to PHY for transmission
-        print_bytes(frame,frame_len);
+        recv_callback_phy recv = phy_phy();
+        for(size_t f = 0; f < frame_len; ++f){
+            send_phy(frame[f], recv);
+        }
+        printf("\n");
     }
 }
 
-recv_callback_dll link_dll(DLL* dll){
+recv_callback_dll link_dll(){
     return recv_dll;
 }
 
-NET_packet recv_dll(){
+void recv_dll(uint8_t byte){
+    print_byte(byte);
+}
+
+
+void service_dll(){
 
 }
 
-// DLL service loop that polls PHY to check for received bytes
-void service_dll(Physical* phy, DLL* dll){ 
-    /* 
-        Store bytes in a simple buffer, and if full, flush the buffer
-    */
-    if(phy->byte_recv){ 
-        // write to next address in buffer
-        uint8_t byte = dll->recv_phy(phy);
-        if(dll->mode == WAIT){ // buffer in WAIT mode for head byte
-            if(byte == DLL_HEAD_BYTE){
-                dll->mode == LISTEN;
-                __buf_write(dll,byte);
-            }
-            else{
-                return;
-            }
-        }
-        else if(dll->mode == LISTEN){ // buffer in LISTEN mode storing bytes
-            if(byte == DLL_FOOT_BYTE){
-                dll->mode == ESCAPE;
-            }
-            __buf_write(dll,byte);
-        }
-        else if(dll->mode == ESCAPE){ // buffer in ESCAPE mode checking for escape or end
-            if(byte == DLL_FOOT_BYTE){ // just escaping
-                __buf_write(dll,byte); 
-            }
-            else{ // actual end of frame if non-escape
-                dll->mode == WAIT; 
-                return;
-            }
-        }
-    }
-}
 
 // INTERNAL METHODS
 // DLL receive buffer methods
