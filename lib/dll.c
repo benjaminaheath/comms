@@ -1,16 +1,6 @@
 #include "dll.h"
 
-void create_dll(DLL* dll){
-    dll->buf = (uint8_t*) malloc(DLL_BUF_MAX * sizeof(uint8_t));
-    dll->buf_size = DLL_BUF_MAX;
-    dll->buf_end = 0;
-    dll->mode = WAIT;
-}
-
-void destroy_dll(DLL* dll){
-    free(dll->buf);
-    free(dll);
-}
+static DLL dll = {NULL, 0, WAIT};
 
 void send_dll(NET_packet pkt){
     /* 
@@ -75,7 +65,29 @@ recv_callback_dll link_dll(){
 }
 
 void recv_dll(uint8_t byte){
+    enum buf_mode next_mode;
     print_byte(byte);
+    printf(" : ");
+    switch (dll.mode)
+    {
+    case WAIT:
+        printf("Wait State");
+        if(byte == 0x7E){next_mode = LISTEN;}
+        else{next_mode = WAIT;}
+        break;
+    case LISTEN: 
+        printf("Listen State");
+        if(byte == 0x7D){next_mode = ESCAPE;}
+        else if(byte == 0x7E){next_mode = WAIT;}
+        else{next_mode = LISTEN;}
+        break;
+    case ESCAPE:
+        printf("Escape State");
+        next_mode = LISTEN;
+        break;
+    }
+    dll.mode = next_mode;
+    printf("\n");
 }
 
 
@@ -85,22 +97,6 @@ void service_dll(){
 
 
 // INTERNAL METHODS
-// DLL receive buffer methods
-static void __buf_write(DLL* dll, uint8_t byte){
-    dll->buf[dll->buf_end] = byte; // write byte to end pointer
-    dll->buf_end++;
-}
-
-static uint8_t __buf_read(DLL* dll, unsigned int index){
-    return dll->buf[index];
-}
-
-static void __buf_flush(DLL* dll){
-    for(int b = 0; b < dll->buf_size; ++b){
-        dll->buf[b] = 0; // zero out all bytes in buffer
-    }
-}
-
 // Packet fragmentation methods
 static uint8_t __get_num_pkt_fragments(uint8_t pkt_length, uint8_t max_length){
     if(pkt_length == 0){return 1;}

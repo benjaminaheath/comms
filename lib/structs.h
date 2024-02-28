@@ -19,10 +19,8 @@ typedef enum frm_type {
 typedef void (*recv_callback_phy)(uint8_t);
 
 typedef struct {
-    recv_callback_phy recv_phy;
     uint8_t* buf;
     unsigned int buf_size;
-    unsigned int buf_end;
     enum buf_mode mode;
 } DLL;
 
