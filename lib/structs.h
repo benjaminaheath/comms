@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef void (*recv_callback_phy)(uint8_t);
+
 enum buf_mode {
     WAIT,
     LISTEN,
@@ -16,12 +18,16 @@ typedef enum frm_type {
     MSG  = 0b10
 } frm_type_t;
 
-typedef void (*recv_callback_phy)(uint8_t);
-
 typedef struct {
+    // receive buffer
     uint8_t* buf;
-    unsigned int buf_size;
+    size_t buf_size;
     enum buf_mode mode;
+    // frame buffer
+    DLL_frame* frmbuf;
+    size_t frmbuf_size;
+
+
 } DLL;
 
 typedef struct {
@@ -29,11 +35,13 @@ typedef struct {
     size_t frame_len;
 } DLL_frame;
 
+typedef void (*recv_callback_dll)(uint8_t);
+
 typedef struct {
     uint8_t* packet;
     size_t pkt_size;
 } NET_packet;
 
-typedef void (*recv_callback_dll)(uint8_t);
+typedef void (*recv_callback_net)(NET_packet);
 
 #endif

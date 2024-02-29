@@ -7,7 +7,9 @@ void send_dll(NET_packet pkt){
         Take contents of net pkt to build frame
         Call send_phy to transmit over physical layer
     */
-    
+    // prepare phy for transmission and receive 
+    recv_callback_phy recv = phy_phy();
+
     // packet fragmentation
     uint8_t num_frames = __get_num_pkt_fragments(pkt.pkt_size,DLL_PAYLOAD_MAX);
     uint8_t* len_payloads = __get_len_pkt_fragments(pkt.pkt_size,DLL_PAYLOAD_MAX);
@@ -52,7 +54,6 @@ void send_dll(NET_packet pkt){
         append_byte(&frame,&frame_len,DLL_FOOT_BYTE);
 
         // hand frame to PHY for transmission
-        recv_callback_phy recv = phy_phy();
         for(size_t f = 0; f < frame_len; ++f){
             send_phy(frame[f], recv);
         }
@@ -66,28 +67,53 @@ recv_callback_dll link_dll(){
 
 void recv_dll(uint8_t byte){
     enum buf_mode next_mode;
-    print_byte(byte);
+    // print_byte(byte);
     printf(" : ");
     switch (dll.mode)
     {
     case WAIT:
-        printf("Wait State");
+        // printf("Wait State");
         if(byte == 0x7E){next_mode = LISTEN;}
         else{next_mode = WAIT;}
         break;
     case LISTEN: 
-        printf("Listen State");
+        // printf("Listen State");
         if(byte == 0x7D){next_mode = ESCAPE;}
         else if(byte == 0x7E){next_mode = WAIT;}
         else{next_mode = LISTEN;}
         break;
     case ESCAPE:
-        printf("Escape State");
+        // printf("Escape State");
         next_mode = LISTEN;
         break;
     }
     dll.mode = next_mode;
-    printf("\n");
+    // printf("\n");
+}
+
+static void __recv_frame(){
+    // copy frame out of buffer
+    DLL_frame* frm = (DLL_frame*) malloc(sizeof(DLL_frame));
+    frm->frame = get_bytes_from(dll.buf,dll.buf_size,0,dll.buf_size);
+    frm->frame_len = dll.buf_size;
+    // clear buffer
+    free(dll.buf);
+    dll.buf_size = 0;
+
+    // helper vars for indexes
+    size_t CTRL_HIGH = 0;
+    size_t CTRL_LOW  = 0;
+    size_t ADDR_SEND = 0;
+    size_t ADDR_RECV = 0;
+    size_t LENGTH    = 0;
+    size_t CHECK_HIGH= 0;
+    size_t CHECK_LOW = 0;
+
+    // validate the checksum to check if it's valid
+
+
+    // get control, addressing, length data
+    
 }
 
 

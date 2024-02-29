@@ -5,4 +5,7 @@
 
 #include "structs.h"
 
+recv_callback_net link_net();
+void recv_net(NET_packet pkt);
+
 #endif 
