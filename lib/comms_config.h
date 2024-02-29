@@ -22,3 +22,5 @@
 #define DLL_PROTOCOL 1 // 0 - B1 (00), 1 - B2 (11)
 #define DLL_CHECKSUM 1 // 0 - Interleaved, 1 - CRC
 #define DLL_CRC16_POLYNOMIAL 0x8005
+#define DLL_MAC_SEND 0x30
+#define DLL_MAC_RECV 0x40

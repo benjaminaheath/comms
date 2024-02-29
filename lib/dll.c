@@ -101,19 +101,50 @@ static void __recv_frame(){
     dll.buf_size = 0;
 
     // helper vars for indexes
-    size_t CTRL_HIGH = 0;
-    size_t CTRL_LOW  = 0;
-    size_t ADDR_SEND = 0;
-    size_t ADDR_RECV = 0;
-    size_t LENGTH    = 0;
-    size_t CHECK_HIGH= 0;
-    size_t CHECK_LOW = 0;
+    const size_t CTRL_HIGH = 0;
+    const size_t CTRL_LOW  = 1;
+    const size_t ADDR_SEND = 2;
+    const size_t ADDR_RECV = 3;
+    const size_t LENGTH    = 4; 
+    const size_t PAYLOAD   = 5;
+    const size_t CHECKSUM_HIGH = frm->frame_len - 2;
+    const size_t CHECKSUM_LOW  = frm->frame_len - 1;
 
     // validate the checksum to check if it's valid
+    uint8_t CHECKSUM_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,CHECKSUM_HIGH);
+    uint8_t CHECKSUM_LOW_BYTE = get_byte(frm->frame,frm->frame_len,CHECKSUM_LOW);
+    uint16_t CHECKSUM = CHECKSUM_HIGH_BYTE << 8 | CHECKSUM_LOW_BYTE;
 
+    uint16_t CRC16 = __get_checksum_subframe(frm->frame,frm->frame_len);
+
+    if(CRC16 != CHECKSUM){ // invalid checksum, flush
+        free(frm->frame);
+        free(frm);
+        return;
+    }
 
     // get control, addressing, length data
+    uint8_t CTRL_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,CTRL_HIGH);
+    uint8_t CTRL_LOW_BYTE = get_byte(frm->frame,frm->frame_len,CTRL_LOW);
+
+    uint8_t ADDR_SEND_BYTE = get_byte(frm->frame,frm->frame_len,ADDR_SEND);
+    uint8_t ADDR_RECV_BYTE = get_byte(frm->frame,frm->frame_len,ADDR_RECV);
     
+    uint8_t LENGTH_BYTE = get_byte(frm->frame,frm->frame_len,LENGTH);
+
+    if(ADDR_RECV_BYTE != DLL_MAC_RECV){ // not correct receiver, flush
+        free(frm->frame);
+        free(frm);
+        return;
+    }
+
+    uint8_t FRAGMENT = 0x7  | CTRL_HIGH_BYTE;
+    uint8_t PROTOCOL = 0x18 | CTRL_HIGH_BYTE;
+    uint8_t MSG_TYPE = 0x60 | CTRL_HIGH_BYTE;
+    uint8_t CHECKTYP = 0x80 | CTRL_HIGH_BYTE;
+    uint8_t SEQ_NUM  = 0xFF | CTRL_LOW_BYTE;
+
+    // with this information, append payload to buffer
 }
 
 
