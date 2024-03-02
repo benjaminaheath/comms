@@ -111,9 +111,9 @@ static void __recv_frame(){
     const size_t CHECKSUM_LOW  = frm->frame_len - 1;
 
     // validate the checksum to check if it's valid
-    uint8_t CHECKSUM_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,CHECKSUM_HIGH);
-    uint8_t CHECKSUM_LOW_BYTE = get_byte(frm->frame,frm->frame_len,CHECKSUM_LOW);
-    uint16_t CHECKSUM = CHECKSUM_HIGH_BYTE << 8 | CHECKSUM_LOW_BYTE;
+    uint8_t  CHECKSUM_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,CHECKSUM_HIGH);
+    uint8_t  CHECKSUM_LOW_BYTE  = get_byte(frm->frame,frm->frame_len,CHECKSUM_LOW);
+    uint16_t CHECKSUM           = CHECKSUM_HIGH_BYTE << 8 | CHECKSUM_LOW_BYTE;
 
     uint16_t CRC16 = __get_checksum_subframe(frm->frame,frm->frame_len);
 
@@ -125,12 +125,10 @@ static void __recv_frame(){
 
     // get control, addressing, length data
     uint8_t CTRL_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,CTRL_HIGH);
-    uint8_t CTRL_LOW_BYTE = get_byte(frm->frame,frm->frame_len,CTRL_LOW);
-
+    uint8_t CTRL_LOW_BYTE  = get_byte(frm->frame,frm->frame_len,CTRL_LOW);
     uint8_t ADDR_SEND_BYTE = get_byte(frm->frame,frm->frame_len,ADDR_SEND);
     uint8_t ADDR_RECV_BYTE = get_byte(frm->frame,frm->frame_len,ADDR_RECV);
-    
-    uint8_t LENGTH_BYTE = get_byte(frm->frame,frm->frame_len,LENGTH);
+    uint8_t LENGTH_BYTE    = get_byte(frm->frame,frm->frame_len,LENGTH);
 
     if(ADDR_RECV_BYTE != DLL_MAC_RECV){ // not correct receiver, flush
         free(frm->frame);
@@ -144,7 +142,18 @@ static void __recv_frame(){
     uint8_t CHECKTYP = 0x80 | CTRL_HIGH_BYTE;
     uint8_t SEQ_NUM  = 0xFF | CTRL_LOW_BYTE;
 
-    // with this information, append payload to buffer
+    // with this information, decide what to do
+    switch(MSG_TYPE){
+        case MSG:
+            // store in fragment buffer
+            break;
+        // case ACK:
+            // move sliding window
+            // break;
+        // case NACK:
+            // queue packet resend
+            // break;
+    }
 }
 
 
