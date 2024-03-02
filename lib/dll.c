@@ -1,6 +1,6 @@
 #include "dll.h"
 
-static DLL dll = {NULL, 0, WAIT};
+static DLL dll;
 
 void send_dll(NET_packet pkt){
     /* 
@@ -62,6 +62,12 @@ void send_dll(NET_packet pkt){
 }
 
 recv_callback_dll link_dll(){
+    dll.DEV_ADDR = DLL_MAC_RECV;
+    dll.buf = NULL;
+    dll.buf_size = 0;
+    dll.frmbuf = NULL;
+    dll.frmbuf_size = 0;
+    dll.mode = WAIT;
     return recv_dll;
 }
 
@@ -101,18 +107,18 @@ static void __recv_frame(){
     dll.buf_size = 0;
 
     // helper vars for indexes
-    const size_t CTRL_HIGH = 0;
-    const size_t CTRL_LOW  = 1;
-    const size_t ADDR_SEND = 2;
-    const size_t ADDR_RECV = 3;
-    const size_t LENGTH    = 4; 
-    const size_t PAYLOAD   = 5;
-    const size_t CHECKSUM_HIGH = frm->frame_len - 2;
-    const size_t CHECKSUM_LOW  = frm->frame_len - 1;
+    frm->CTRL_HIGH = 0;
+    frm->CTRL_LOW  = 1;
+    frm->ADDR_SEND = 2;
+    frm->ADDR_RECV = 3;
+    frm->LENGTH    = 4; 
+    frm->PAYLOAD   = 5;
+    frm->CHECKSUM_HIGH = frm->frame_len - 2;
+    frm->CHECKSUM_LOW  = frm->frame_len - 1;
 
     // validate the checksum to check if it's valid
-    uint8_t  CHECKSUM_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,CHECKSUM_HIGH);
-    uint8_t  CHECKSUM_LOW_BYTE  = get_byte(frm->frame,frm->frame_len,CHECKSUM_LOW);
+    uint8_t  CHECKSUM_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,frm->CHECKSUM_HIGH);
+    uint8_t  CHECKSUM_LOW_BYTE  = get_byte(frm->frame,frm->frame_len,frm->CHECKSUM_LOW);
     uint16_t CHECKSUM           = CHECKSUM_HIGH_BYTE << 8 | CHECKSUM_LOW_BYTE;
 
     uint16_t CRC16 = __get_checksum_subframe(frm->frame,frm->frame_len);
@@ -124,11 +130,11 @@ static void __recv_frame(){
     }
 
     // get control, addressing, length data
-    uint8_t CTRL_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,CTRL_HIGH);
-    uint8_t CTRL_LOW_BYTE  = get_byte(frm->frame,frm->frame_len,CTRL_LOW);
-    uint8_t ADDR_SEND_BYTE = get_byte(frm->frame,frm->frame_len,ADDR_SEND);
-    uint8_t ADDR_RECV_BYTE = get_byte(frm->frame,frm->frame_len,ADDR_RECV);
-    uint8_t LENGTH_BYTE    = get_byte(frm->frame,frm->frame_len,LENGTH);
+    uint8_t CTRL_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,frm->CTRL_HIGH);
+    uint8_t CTRL_LOW_BYTE  = get_byte(frm->frame,frm->frame_len,frm->CTRL_LOW);
+    uint8_t ADDR_SEND_BYTE = get_byte(frm->frame,frm->frame_len,frm->ADDR_SEND);
+    uint8_t ADDR_RECV_BYTE = get_byte(frm->frame,frm->frame_len,frm->ADDR_RECV);
+    uint8_t LENGTH_BYTE    = get_byte(frm->frame,frm->frame_len,frm->LENGTH);
 
     if(ADDR_RECV_BYTE != DLL_MAC_RECV){ // not correct receiver, flush
         free(frm->frame);
@@ -136,6 +142,7 @@ static void __recv_frame(){
         return;
     }
 
+    // extract control data
     uint8_t FRAGMENT = 0x7  | CTRL_HIGH_BYTE;
     uint8_t PROTOCOL = 0x18 | CTRL_HIGH_BYTE;
     uint8_t MSG_TYPE = 0x60 | CTRL_HIGH_BYTE;
@@ -145,7 +152,13 @@ static void __recv_frame(){
     // with this information, decide what to do
     switch(MSG_TYPE){
         case MSG:
-            // store in fragment buffer
+            // if message, store at end of fragment buffer
+            __store_fragment(frm);
+
+            // if final frame present, check for a complete packet
+
+            // if returns non-null, use returned vector to reconstruct NET pkt
+
             break;
         // case ACK:
             // move sliding window
@@ -156,6 +169,22 @@ static void __recv_frame(){
     }
 }
 
+static void __store_fragment(DLL_frame* frm){
+    // store fragment    
+
+    // check if a final flag is present in the fragment buffer
+
+    // if so, mark DLL final_present true
+
+}
+
+static size_t __check_complete_pkt(){
+
+}
+
+static NET_packet __reconstruct_pkt(){
+
+}
 
 void service_dll(){
 
