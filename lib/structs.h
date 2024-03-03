@@ -28,6 +28,7 @@ typedef struct {
     // fragment buffer
     DLL_frame** frmbuf;
     size_t frmbuf_size;
+    bool first_present;
     bool final_present;
 
 } DLL;

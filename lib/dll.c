@@ -142,12 +142,15 @@ static void __recv_frame(){
         return;
     }
 
+    // TODO: lock in a sender once a frame is already in the buffer
+
     // extract control data
-    uint8_t FRAGMENT = 0x7  & CTRL_HIGH_BYTE;
-    uint8_t PROTOCOL = 0x18 & CTRL_HIGH_BYTE;
-    uint8_t MSG_TYPE = 0x60 & CTRL_HIGH_BYTE;
-    uint8_t CHECKTYP = 0x80 & CTRL_HIGH_BYTE;
-    uint8_t SEQ_NUM  = 0xFF & CTRL_LOW_BYTE;
+    uint8_t    FRAGMENT = 0x7  & CTRL_HIGH_BYTE;
+    bool       FINAL    = 0x8  & CTRL_HIGH_BYTE >> 3;
+    bool       PROTOCOL = 0x18 & CTRL_HIGH_BYTE >> 4;
+    frm_type_t MSG_TYPE = 0x60 & CTRL_HIGH_BYTE >> 5;
+    bool       CHECKTYP = 0x80 & CTRL_HIGH_BYTE >> 7;
+    uint8_t    SEQ_NUM  = 0xFF & CTRL_LOW_BYTE;
 
     // with this information, decide what to do
     switch(MSG_TYPE){
@@ -169,12 +172,22 @@ static void __recv_frame(){
     }
 }
 
-static void __store_fragment(DLL_frame* frm, uint8_t fragment, uint8_t seq_num){
+// TODO: check if sequence numbers match in with others before inserting or discard
+// TODO: lock in a sender once one frame is in an discard others
+//       -- only allow frames to enter which have lower sequence numbers and lower fragments
+//       -- or, higher sequence numbers and higher fragments
+static void __store_fragment(DLL_frame* frm, uint8_t fragment, uint8_t seq, bool final){
+    // TODO: Check for sequence number before performing any append
+
     // increase size of frame buffer
     ++dll.frmbuf_size;
     dll.frmbuf = (DLL_frame**) realloc(dll.frmbuf,dll.frmbuf_size * sizeof(DLL_frame*));
 
-    if(fragment == 0x7){ // if final fragment, always store at end
+    if(fragment == 0x0) { // check if first frame is stored
+        dll.first_present = true;
+    }
+
+    if(final){ // if final fragment, always store at end
         dll.frmbuf[dll.frmbuf_size - 1] = *frm;
         dll.final_present = true;
     } else { // otherwise iterate through and store pointer in order
@@ -194,10 +207,27 @@ static void __store_fragment(DLL_frame* frm, uint8_t fragment, uint8_t seq_num){
         }
         dll.frmbuf[frag_insert_index] = *frm;
     }
+
+    // if first and final present, set fragment count total for check
 }
 
-static size_t __check_complete_pkt(){
+// if we know there's a first and a final, all we need check is the length of the buffer
+static bool __check_complete_pkt(){
+    // given that there is a first and a final frame, check for all fragments in sequence
+    size_t total = 0;
+    for(size_t f = 0; f < dll.frmbuf_size - 1; ++f){
+        // get current and next frames
+        DLL_frame cur_frm = dll.frmbuf[f];
+        DLL_frame nxt_frm = dll.frmbuf[f+1];
+        // get fragment numbers
+        uint8_t cur_frag = cur_frm.frame[cur_frm.CTRL_HIGH] & 0x7;
+        uint8_t nxt_frag = nxt_frm.frame[nxt_frm.CTRL_HIGH] & 0x7;
 
+        if(nxt_frag != cur_frag + 1){ // frame fragments are non-sequential
+            return false;
+        }
+    }
+    return true;
 }
 
 static NET_packet __reconstruct_pkt(){
@@ -265,16 +295,10 @@ static uint8_t** __get_pkt_fragments(uint8_t* len_fragments, uint8_t num_fragmen
 
 static uint16_t __get_control_subframe(uint8_t fragment, bool final, frm_type_t type, uint8_t seq_num){
     uint16_t ctrl = 0;
-    if(!final){ctrl |= fragment & 0x7;}
-    else{ctrl |= 0x7;}
-
-    uint8_t protocol = 0; 
-    switch(DLL_PROTOCOL){
-        case 0: protocol = 0x0; break;
-        case 1: protocol = 0x3; break;
-        default: protocol = 0x0;
-    }
-    ctrl |= protocol << 3;
+    // modify from spec: 3-bit fragment, next bit 
+    ctrl |= fragment & 0x7;
+    ctrl |= final << 3;
+    ctrl |= DLL_PROTOCOL << 4;
     ctrl |= type << 5;
     ctrl |= DLL_CHECKSUM << 7;
     ctrl |= seq_num << 8;
