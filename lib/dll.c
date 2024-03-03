@@ -143,17 +143,17 @@ static void __recv_frame(){
     }
 
     // extract control data
-    uint8_t FRAGMENT = 0x7  | CTRL_HIGH_BYTE;
-    uint8_t PROTOCOL = 0x18 | CTRL_HIGH_BYTE;
-    uint8_t MSG_TYPE = 0x60 | CTRL_HIGH_BYTE;
-    uint8_t CHECKTYP = 0x80 | CTRL_HIGH_BYTE;
-    uint8_t SEQ_NUM  = 0xFF | CTRL_LOW_BYTE;
+    uint8_t FRAGMENT = 0x7  & CTRL_HIGH_BYTE;
+    uint8_t PROTOCOL = 0x18 & CTRL_HIGH_BYTE;
+    uint8_t MSG_TYPE = 0x60 & CTRL_HIGH_BYTE;
+    uint8_t CHECKTYP = 0x80 & CTRL_HIGH_BYTE;
+    uint8_t SEQ_NUM  = 0xFF & CTRL_LOW_BYTE;
 
     // with this information, decide what to do
     switch(MSG_TYPE){
         case MSG:
             // if message, store at end of fragment buffer
-            __store_fragment(frm);
+            __store_fragment(frm, FRAGMENT, SEQ_NUM);
 
             // if final frame present, check for a complete packet
 
@@ -169,13 +169,31 @@ static void __recv_frame(){
     }
 }
 
-static void __store_fragment(DLL_frame* frm){
-    // store fragment    
+static void __store_fragment(DLL_frame* frm, uint8_t fragment, uint8_t seq_num){
+    // increase size of frame buffer
+    ++dll.frmbuf_size;
+    dll.frmbuf = (DLL_frame**) realloc(dll.frmbuf,dll.frmbuf_size * sizeof(DLL_frame*));
 
-    // check if a final flag is present in the fragment buffer
-
-    // if so, mark DLL final_present true
-
+    if(fragment == 0x7){ // if final fragment, always store at end
+        dll.frmbuf[dll.frmbuf_size - 1] = *frm;
+        dll.final_present = true;
+    } else { // otherwise iterate through and store pointer in order
+        uint8_t frag_insert_index = 0;
+        for(size_t f = 0; f < dll.frmbuf_size; ++f){
+            DLL_frame frm = dll.frmbuf[f]; 
+            uint8_t buf_fragment = frm.frame[frm.CTRL_HIGH] & 0x7; 
+            // find buffered fragment with higher fragment number than this
+            if(buf_fragment > fragment){
+                frag_insert_index = f;
+                break;
+            }
+        }
+        // now, work backwards and shuffle pointers to make room for insert
+        for(size_t f = dll.frmbuf_size; f <= frag_insert_index; --f){
+            dll.frmbuf[f] = dll.frmbuf[f-1];
+        }
+        dll.frmbuf[frag_insert_index] = *frm;
+    }
 }
 
 static size_t __check_complete_pkt(){
