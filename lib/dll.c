@@ -231,7 +231,16 @@ static bool __check_complete_pkt(){
 }
 
 static NET_packet __reconstruct_pkt(){
-
+    // iterate through the buffer
+    // on each frame, take the frame length as the length needed to append bytes to the existing NET_packet buffer.
+    NET_packet pkt;
+    pkt.packet = NULL;
+    pkt.pkt_size = 0;
+    for(size_t f = 0; f < pkt.pkt_size; ++f){
+        DLL_frame frm = dll.frmbuf[f];
+        append_bytes(&pkt.packet,&pkt.pkt_size,frm.frame,frm.frame_len);
+    }
+    return pkt;
 }
 
 void service_dll(){

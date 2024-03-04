@@ -4,8 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${default}",
-                "C:\\Users\\benja\\Documents\\Programming\\comms\\src",
-                "C:\\Users\\benja\\Documents\\Programming\\comms\\lib"
+                "N:\\Programming\\comms\\src",
+                "N:\\Programming\\comms\\lib"
 
             ],
             "defines": [
@@ -13,7 +13,7 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:/mingw64/bin/gcc.exe",
+            "compilerPath": "C:/MinGW/bin/gcc.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-gcc-x64"
