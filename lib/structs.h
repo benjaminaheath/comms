@@ -18,20 +18,6 @@ typedef enum frm_type {
     MSG  = 0b10
 } frm_type_t;
 
-typedef struct {
-    // DLL details
-    uint8_t DEV_ADDR;
-    // receive buffer
-    uint8_t* buf;
-    size_t buf_size;
-    enum buf_mode mode;
-    // fragment buffer
-    DLL_frame** frmbuf;
-    size_t frmbuf_size;
-    bool first_present;
-    bool final_present;
-
-} DLL;
 
 typedef struct {
     // frame information
@@ -47,6 +33,21 @@ typedef struct {
     size_t CHECKSUM_HIGH;
     size_t CHECKSUM_LOW;
 } DLL_frame;
+
+typedef struct {
+    // DLL details
+    uint8_t DEV_ADDR;
+    // receive buffer
+    uint8_t* buf;
+    size_t buf_size;
+    enum buf_mode mode;
+    // fragment buffer
+    DLL_frame** frmbuf;
+    size_t frmbuf_size;
+    bool first_present;
+    bool final_present;
+
+} DLL;
 
 typedef void (*recv_callback_dll)(uint8_t);
 

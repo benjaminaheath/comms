@@ -121,7 +121,7 @@ void remove_byte(uint8_t** bytes, size_t *num_byte, size_t index){
     }
     //resize array to fit new size
     --(*num_byte);
-    *bytes = (uint8_t*) realloc(*bytes,num_byte);
+    *bytes = (uint8_t*) realloc(*bytes,*num_byte);
     if(*bytes == NULL){
         fprintf(stderr,"remove_byte failed\n");
         exit(EXIT_FAILURE);

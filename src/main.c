@@ -14,18 +14,13 @@ void dll_send_case(){
         Generate bytes and fill out NET packet
         call send_dll to send
     */
-    size_t num_byte = 30;
+    size_t num_byte = 20;
     uint8_t* bytes = rand_bytes(num_byte); 
-    append_byte(&bytes,&num_byte,0x7E);
-    append_byte(&bytes,&num_byte,0x7D);
 
     NET_packet pkt = {bytes, num_byte};
+    printf("NET Packet SEND:\n");
+    print_bytes(pkt.packet,pkt.pkt_size);
+    printf("\n");
     send_dll(pkt);
     printf("End DLL Send Case\n");
-}
-
-void dll_receive_case(){
-    printf("Start DLL Receive Case\n");
-
-    printf("End DLL Receive Case\n");
 }

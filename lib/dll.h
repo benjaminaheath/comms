@@ -30,4 +30,7 @@ static void __escape_frame(uint8_t** frame, size_t* frame_len);
 // dll internal methods -- receive
 void recv_dll(uint8_t byte);
 static void __recv_frame();
+static void __store_fragment(DLL_frame* frm, uint8_t fragment, uint8_t seq, bool final);
+static bool __check_complete_pkt();
+static NET_packet __reconstruct_pkt();
 #endif

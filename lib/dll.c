@@ -1,6 +1,6 @@
 #include "dll.h"
 
-static DLL dll;
+static DLL dll = {DLL_MAC_RECV, NULL, 0, WAIT, NULL, 0, false, false};
 
 void send_dll(NET_packet pkt){
     /* 
@@ -57,62 +57,61 @@ void send_dll(NET_packet pkt){
         for(size_t f = 0; f < frame_len; ++f){
             send_phy(frame[f], recv);
         }
-        printf("\n");
+
+        // clean up
+        free(frame);
+
     }
 }
 
 recv_callback_dll link_dll(){
-    dll.DEV_ADDR = DLL_MAC_RECV;
-    dll.buf = NULL;
-    dll.buf_size = 0;
-    dll.frmbuf = NULL;
-    dll.frmbuf_size = 0;
-    dll.mode = WAIT;
     return recv_dll;
 }
 
+//TODO: Implement function calls in each mode to receive frame and reset
 void recv_dll(uint8_t byte){
     enum buf_mode next_mode;
-    // print_byte(byte);
-    printf(" : ");
+
     switch (dll.mode)
     {
     case WAIT:
-        // printf("Wait State");
         if(byte == 0x7E){next_mode = LISTEN;}
         else{next_mode = WAIT;}
         break;
     case LISTEN: 
-        // printf("Listen State");
         if(byte == 0x7D){next_mode = ESCAPE;}
-        else if(byte == 0x7E){next_mode = WAIT;}
-        else{next_mode = LISTEN;}
+        else if(byte == 0x7E){__recv_frame(); next_mode = WAIT;}
+        else{append_byte(&dll.buf,&dll.buf_size,byte); next_mode = LISTEN;}
         break;
     case ESCAPE:
-        // printf("Escape State");
         next_mode = LISTEN;
         break;
     }
     dll.mode = next_mode;
-    // printf("\n");
 }
 
 static void __recv_frame(){
+    printf("\nRECEIVE DELIMITED FRAME:\n");
+    print_bytes(dll.buf,dll.buf_size);
+    printf("\n");
+
     // copy frame out of buffer
     DLL_frame* frm = (DLL_frame*) malloc(sizeof(DLL_frame));
     frm->frame = get_bytes_from(dll.buf,dll.buf_size,0,dll.buf_size);
     frm->frame_len = dll.buf_size;
+
     // clear buffer
     free(dll.buf);
+    dll.buf = NULL;
     dll.buf_size = 0;
 
     // helper vars for indexes
-    frm->CTRL_HIGH = 0;
-    frm->CTRL_LOW  = 1;
-    frm->ADDR_SEND = 2;
-    frm->ADDR_RECV = 3;
-    frm->LENGTH    = 4; 
-    frm->PAYLOAD   = 5;
+    frm->CTRL_HIGH     = 0;
+    frm->CTRL_LOW      = 1;
+    frm->ADDR_SEND     = 2;
+    frm->ADDR_RECV     = 3;
+    frm->LENGTH        = 4; 
+    frm->PAYLOAD       = 5;
     frm->CHECKSUM_HIGH = frm->frame_len - 2;
     frm->CHECKSUM_LOW  = frm->frame_len - 1;
 
@@ -156,7 +155,7 @@ static void __recv_frame(){
     switch(MSG_TYPE){
         case MSG:
             // if message, store at end of fragment buffer
-            __store_fragment(frm, FRAGMENT, SEQ_NUM);
+            // __store_fragment(frm, FRAGMENT, SEQ_NUM, FINAL);
 
             // if final frame present, check for a complete packet
 
@@ -176,72 +175,72 @@ static void __recv_frame(){
 // TODO: lock in a sender once one frame is in an discard others
 //       -- only allow frames to enter which have lower sequence numbers and lower fragments
 //       -- or, higher sequence numbers and higher fragments
-static void __store_fragment(DLL_frame* frm, uint8_t fragment, uint8_t seq, bool final){
-    // TODO: Check for sequence number before performing any append
+// static void __store_fragment(DLL_frame* frm, uint8_t fragment, uint8_t seq, bool final){
+    // // TODO: Check for sequence number before performing any append
 
-    // increase size of frame buffer
-    ++dll.frmbuf_size;
-    dll.frmbuf = (DLL_frame**) realloc(dll.frmbuf,dll.frmbuf_size * sizeof(DLL_frame*));
+    // // increase size of frame buffer
+    // ++dll.frmbuf_size;
+    // dll.frmbuf = (DLL_frame**) realloc(dll.frmbuf,dll.frmbuf_size * sizeof(DLL_frame*));
 
-    if(fragment == 0x0) { // check if first frame is stored
-        dll.first_present = true;
-    }
+    // if(fragment == 0x0) { // check if first frame is stored
+        // dll.first_present = true;
+    // }
 
-    if(final){ // if final fragment, always store at end
-        dll.frmbuf[dll.frmbuf_size - 1] = *frm;
-        dll.final_present = true;
-    } else { // otherwise iterate through and store pointer in order
-        uint8_t frag_insert_index = 0;
-        for(size_t f = 0; f < dll.frmbuf_size; ++f){
-            DLL_frame frm = dll.frmbuf[f]; 
-            uint8_t buf_fragment = frm.frame[frm.CTRL_HIGH] & 0x7; 
-            // find buffered fragment with higher fragment number than this
-            if(buf_fragment > fragment){
-                frag_insert_index = f;
-                break;
-            }
-        }
-        // now, work backwards and shuffle pointers to make room for insert
-        for(size_t f = dll.frmbuf_size; f <= frag_insert_index; --f){
-            dll.frmbuf[f] = dll.frmbuf[f-1];
-        }
-        dll.frmbuf[frag_insert_index] = *frm;
-    }
+    // if(final){ // if final fragment, always store at end
+        // dll.frmbuf[dll.frmbuf_size - 1] = *frm;
+        // dll.final_present = true;
+    // } else { // otherwise iterate through and store pointer in order
+        // uint8_t frag_insert_index = 0;
+        // for(size_t f = 0; f < dll.frmbuf_size; ++f){
+            // DLL_frame frm = dll.frmbuf[f]; 
+            // uint8_t buf_fragment = frm.frame[frm.CTRL_HIGH] & 0x7; 
+            // // find buffered fragment with higher fragment number than this
+            // if(buf_fragment > fragment){
+                // frag_insert_index = f;
+                // break;
+            // }
+        // }
+        // // now, work backwards and shuffle pointers to make room for insert
+        // for(size_t f = dll.frmbuf_size; f <= frag_insert_index; --f){
+            // dll.frmbuf[f] = dll.frmbuf[f-1];
+        // }
+        // dll.frmbuf[frag_insert_index] = *frm;
+    // }
 
-    // if first and final present, set fragment count total for check
-}
+    // // if first and final present, set fragment count total for check
+// }
 
 // if we know there's a first and a final, all we need check is the length of the buffer
-static bool __check_complete_pkt(){
-    // given that there is a first and a final frame, check for all fragments in sequence
-    size_t total = 0;
-    for(size_t f = 0; f < dll.frmbuf_size - 1; ++f){
-        // get current and next frames
-        DLL_frame cur_frm = dll.frmbuf[f];
-        DLL_frame nxt_frm = dll.frmbuf[f+1];
-        // get fragment numbers
-        uint8_t cur_frag = cur_frm.frame[cur_frm.CTRL_HIGH] & 0x7;
-        uint8_t nxt_frag = nxt_frm.frame[nxt_frm.CTRL_HIGH] & 0x7;
+// static bool __check_complete_pkt(){
+//     // given that there is a first and a final frame, check for all fragments in sequence
+//     size_t total = 0;
+//     for(size_t f = 0; f < dll.frmbuf_size - 1; ++f){
+//         // get current and next frames
+//         DLL_frame cur_frm = dll.frmbuf[f];
+//         DLL_frame nxt_frm = dll.frmbuf[f+1];
+//         // get fragment numbers
+//         uint8_t cur_frag = cur_frm.frame[cur_frm.CTRL_HIGH] & 0x7;
+//         uint8_t nxt_frag = nxt_frm.frame[nxt_frm.CTRL_HIGH] & 0x7;
 
-        if(nxt_frag != cur_frag + 1){ // frame fragments are non-sequential
-            return false;
-        }
-    }
-    return true;
-}
+//         if(nxt_frag != cur_frag + 1){ // frame fragments are non-sequential
+//             return false;
+//         }
+//     }
+//     return true;
+// }
 
-static NET_packet __reconstruct_pkt(){
-    // iterate through the buffer
-    // on each frame, take the frame length as the length needed to append bytes to the existing NET_packet buffer.
-    NET_packet pkt;
-    pkt.packet = NULL;
-    pkt.pkt_size = 0;
-    for(size_t f = 0; f < pkt.pkt_size; ++f){
-        DLL_frame frm = dll.frmbuf[f];
-        append_bytes(&pkt.packet,&pkt.pkt_size,frm.frame,frm.frame_len);
-    }
-    return pkt;
-}
+// static NET_packet __reconstruct_pkt(){
+//     // iterate through the buffer
+//     // on each frame, take the frame length as the length needed to append bytes to the existing NET_packet buffer.
+//     NET_packet pkt;
+//     pkt.packet = NULL;
+//     pkt.pkt_size = 0;
+//     for(size_t f = 0; f < pkt.pkt_size; ++f){
+//         DLL_frame frm = dll.frmbuf[f];
+//         append_bytes(&pkt.packet,&pkt.pkt_size,frm.frame,frm.frame_len);
+//     }
+//     return pkt;
+// }
 
 void service_dll(){
 
