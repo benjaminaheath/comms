@@ -44,6 +44,7 @@ typedef struct {
     uint8_t ADDR_SEND;   // DLL Sender MAC Address
     uint8_t ADDR_RECV;   // DLL Receiver MAC Address
     uint8_t LENGTH;      // Payload Length
+    uint8_t* PAYLOAD;
     uint16_t CHECKSUM;   // Checksum
 } DLL_frame;
 

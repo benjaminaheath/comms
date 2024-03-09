@@ -16,51 +16,37 @@ void send_dll(NET_packet pkt){
     uint8_t** fragments = __get_pkt_fragments(len_payloads,num_frames,pkt.packet,pkt.pkt_size);
 
     for(int f = 0; f < num_frames; ++f){
-        uint8_t* frame = NULL;
-        size_t frame_len = 0;
-        // append header byte
-        append_byte(&frame,&frame_len,DLL_HEAD_BYTE);
+        // Specify all framing information, then pass to framing helper
+        DLL_frame frm;
 
-        // generate control subframe
-        uint16_t ctrl = __get_control_subframe(f,(f == num_frames-1),MSG,0xC3);
-        uint8_t ctrl_high_byte = ctrl >> 8;
-        uint8_t ctrl_low_byte = ctrl;
-        append_byte(&frame,&frame_len,ctrl_high_byte);
-        append_byte(&frame,&frame_len,ctrl_low_byte);
+        // CTRL Information
+        frm.FRAGMENT = f;
+        frm.FINAL = (f == num_frames-1);
+        frm.PROTOCOL = DLL_PROTOCOL;
+        frm.MSG_TYPE = MSG;
+        frm.CHECKTYPE = DLL_CHECKSUM;
+        frm.SEQ_NUM = 0;
 
-        // generate addressing subframe
-        uint8_t src_byte = DLL_MAC_SEND;
-        uint8_t dst_byte = DLL_MAC_RECV;
-        append_byte(&frame,&frame_len,src_byte);
-        append_byte(&frame,&frame_len,dst_byte);
+        // ADDR Information
+        frm.ADDR_SEND = DLL_MAC_SEND;
+        frm.ADDR_RECV = DLL_MAC_RECV;
 
-        // generate length subframe
-        append_byte(&frame,&frame_len,len_payloads[f]);
+        // Length Information
+        frm.LENGTH = len_payloads[f];
 
-        // append payload
-        append_bytes(&frame,&frame_len,fragments[f],len_payloads[f]);
+        // Payload Information
+        frm.PAYLOAD = fragments[f];
 
-        // generate checksum
-        uint16_t checksum = __get_checksum_subframe(frame,frame_len); 
-        uint8_t checksum_high_byte = checksum >> 8;
-        uint8_t checksum_low_byte = checksum;
-        append_byte(&frame,&frame_len,checksum_high_byte);
-        append_byte(&frame,&frame_len,checksum_low_byte);
-
-        // escaping for packet
-        __escape_frame(&frame,&frame_len);        
-
-        // append footer byte
-        append_byte(&frame,&frame_len,DLL_FOOT_BYTE);
+        // Hand to Framing Helper to complete rest of framing
+        __frame_dll(&frm);
 
         // hand frame to PHY for transmission
-        for(size_t f = 0; f < frame_len; ++f){
-            send_phy(frame[f], recv);
+        for(size_t f = 0; f < frm.frame_len; ++f){
+            send_phy(frm.frame[f], recv);
         }
 
-        // clean up
-        free(frame);
-
+        // clean up and free resources after transmission
+        free(frm.frame);
     }
 }
 
@@ -88,6 +74,42 @@ void recv_dll(uint8_t byte){
         break;
     }
     dll.mode = next_mode;
+}
+
+// Helper to frame DLL after all frame information set
+void __frame_dll(DLL_frame* frm){
+    // Generate CTRL subframe
+    uint16_t CTRL = __get_control_subframe(*frm);
+    uint8_t CTRL_HIGH = (CTRL & 0xFF00) >> 8;
+    uint8_t CTRL_LOW  = (CTRL)              ;
+    
+    // Build pre-Escaped, pre-Delimited Frame
+    append_byte(&frm->frame,&frm->frame_len,CTRL_HIGH);
+    append_byte(&frm->frame,&frm->frame_len,CTRL_LOW);
+    append_byte(&frm->frame,&frm->frame_len,frm->ADDR_SEND);
+    append_byte(&frm->frame,&frm->frame_len,frm->ADDR_RECV);
+    append_byte(&frm->frame,&frm->frame_len,frm->LENGTH);
+    append_bytes(&frm->frame,&frm->frame_len,frm->PAYLOAD,frm->LENGTH);
+
+    // Append checksum of pre-Escaped, pre-Delimited Frame
+    uint16_t CHECKSUM = __get_checksum_subframe(frm->frame,frm->frame_len);
+    uint8_t CHECKSUM_HIGH = (CHECKSUM & 0xFF00) >> 8;
+    uint8_t CHECKSUM_LOW  = (CHECKSUM)              ;
+
+    append_byte(&frm->frame,&frm->frame_len,CHECKSUM_HIGH);
+    append_byte(&frm->frame,&frm->frame_len,CHECKSUM_LOW);
+
+    // Build Escaped, pre-Delimited Frame
+    __escape_frame(&frm->frame,&frm->frame_len);
+
+    // Build Escaped, Delimited Frame
+    insert_byte(&frm->frame,&frm->frame_len,DLL_HEAD_BYTE);
+    append_byte(&frm->frame,&frm->frame_len,DLL_FOOT_BYTE);
+}
+
+// Helper to deframe DLL from byte stream and extract frame information
+DLL_frame __deframe_dll(uint8_t* frm, size_t frm_size){
+    
 }
 
 static void __recv_frame(){
@@ -312,15 +334,15 @@ static uint8_t** __get_pkt_fragments(uint8_t* len_fragments, uint8_t num_fragmen
     return fragments;
 }
 
-static uint16_t __get_control_subframe(uint8_t fragment, bool final, frm_type_t type, uint8_t seq_num){
+static uint16_t __get_control_subframe(DLL_frame frm){
     uint16_t ctrl = 0;
     // modify from spec: 3-bit fragment, next bit 
-    ctrl |= fragment     << 13; // BBB00000-00000000
-    ctrl |= final        << 12; // 000B0000-00000000
+    ctrl |= frm.FRAGMENT << 13; // BBB00000-00000000
+    ctrl |= frm.FINAL    << 12; // 000B0000-00000000
     ctrl |= DLL_PROTOCOL << 11; // 0000B000-00000000
-    ctrl |= type         << 9;  // 00000BB0-00000000
+    ctrl |= frm.MSG_TYPE << 9;  // 00000BB0-00000000
     ctrl |= DLL_CHECKSUM << 8;  // 0000000B-00000000
-    ctrl |= seq_num;            // 00000000-BBBBBBBB
+    ctrl |= frm.SEQ_NUM;        // 00000000-BBBBBBBB
     return ctrl;
 }
 
