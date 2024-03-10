@@ -123,8 +123,8 @@ void __deframe_dll(DLL_frame* frm){
     frm->SEQ_NUM   = (0xFF & CTRL_LOW )     ; // BBBBBBBB
 
     // Get ADDR information
-    frm->ADDR_RECV = get_byte(frm->frame,frm->frame_len,2);
-    frm->ADDR_SEND = get_byte(frm->frame,frm->frame_len,3);
+    frm->ADDR_SEND = get_byte(frm->frame,frm->frame_len,2);
+    frm->ADDR_RECV = get_byte(frm->frame,frm->frame_len,3);
 
     // Get LENGTH information
     frm->LENGTH  = get_byte(frm->frame,frm->frame_len,4);
@@ -135,6 +135,18 @@ void __deframe_dll(DLL_frame* frm){
     uint8_t CHECKSUM_HIGH = get_byte(frm->frame,frm->frame_len,frm->frame_len-2);
     uint8_t CHECKSUM_LOW  = get_byte(frm->frame,frm->frame_len,frm->frame_len-1);
     frm->CHECKSUM = (uint16_t) ((CHECKSUM_HIGH << 8) | CHECKSUM_LOW);
+
+    printf("FRAGMENT=%u\nFINAL=%u\nPROTOCOL=%u\nMSG_TYPE=%u\nCHECKTYPE=%u\nSEQ=%u\nRECV=%x\nSEND=%x\nLENGTH=%u\nCHECKSUM=%x\n\n",
+            frm->FRAGMENT,
+            frm->FINAL,
+            frm->PROTOCOL,
+            frm->MSG_TYPE,
+            frm->CHECKTYPE,
+            frm->SEQ_NUM,
+            frm->ADDR_RECV,
+            frm->ADDR_SEND,
+            frm->LENGTH,
+            frm->CHECKSUM);
 }
 
 static void __recv_frame(){
@@ -185,23 +197,35 @@ static void __recv_frame(){
 }
 
 static void __store_fragment(DLL_frame *frm){
-    size_t insert_frm_at;
+    size_t insert_frm_at = 0;
     // TODO: shuffle and insert can be performed in one iteration: shuffle until match then insert
     // get location in frmbuf to insert pointer at
-    for(size_t f = 0; f , dll.frmbuf_size; ++f){
+    printf("Iterating through frames:");
+    for(size_t f = 0; f < dll.frmbuf_size; ++f){
         DLL_frame* frame_in_buf = dll.frmbuf[f];
+        printf("%u:",frame_in_buf->FRAGMENT);
         if(frm->FRAGMENT > frame_in_buf->FRAGMENT){
             insert_frm_at = f;
+            break;
         }
     }
+    printf("Insert Frame at:%u\n",insert_frm_at);
 
     // expand frame buffer and shuffle pointers
+    // FIXME: Frame pointer shuffle broken
     ++dll.frmbuf_size;
     dll.frmbuf = (DLL_frame**) realloc(dll.frmbuf,dll.frmbuf_size * sizeof(DLL_frame*));
-    for(size_t f = dll.frmbuf_size; f > insert_frm_at; --f){
-        dll.frmbuf[f] = dll.frmbuf[f-1];
+    if(dll.frmbuf_size > 1){
+        for(size_t f = dll.frmbuf_size; f > insert_frm_at; --f){
+            dll.frmbuf[f] = dll.frmbuf[f-1];
+        }
     }
     dll.frmbuf[insert_frm_at] = frm;
+
+    for(size_t p = 0; p < dll.frmbuf_size; ++p){
+        print_ptr(dll.frmbuf[p]);
+    }
+    printf("\n=====================\n");
 }
 
 static bool __check_complete_pkt(){
@@ -219,6 +243,7 @@ static NET_packet __reconstruct_pkt(){
         size_t payload_size = dll.frmbuf[f]->LENGTH;
         append_bytes(&pkt.packet,&pkt.pkt_size,payload,payload_size);
     }
+    print_bytes(pkt.packet,pkt.pkt_size);
     return pkt;
 }
 
