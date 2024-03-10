@@ -58,10 +58,7 @@ typedef struct {
     enum buf_mode mode; // DLL Frame Receive Buffer State
 
     // fragment buffer
-    DLL_frame** frmbuf; // DLL Fragment Storage Buffer
-    size_t frmbuf_size; // DLL Fragment Storage Buffer Size
-    bool first_present; // First Fragment Present Flag
-    bool final_present; // Final Fragment Present Flag
+    DLL_frame* frmbuf[DLL_MAX_FRAGMENTS]; // DLL Fragment Storage Buffer
 } DLL;
 
 typedef void (*recv_callback_dll)(uint8_t);

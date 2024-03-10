@@ -1,6 +1,8 @@
 #include "dll.h"
 
-static DLL dll = {DLL_MAC_RECV, NULL, 0, WAIT, NULL, 0, false, false};
+static DLL dll = {DLL_MAC_RECV, // DEV_ADDR
+                  NULL, 0, WAIT,// buf, buf_size, mode 
+                  NULL, 0};     // frmbuf, frmbuf_size
 
 void send_dll(NET_packet pkt){
     /* 
@@ -136,48 +138,48 @@ void __deframe_dll(DLL_frame* frm){
     uint8_t CHECKSUM_LOW  = get_byte(frm->frame,frm->frame_len,frm->frame_len-1);
     frm->CHECKSUM = (uint16_t) ((CHECKSUM_HIGH << 8) | CHECKSUM_LOW);
 
-    printf("FRAGMENT=%u\nFINAL=%u\nPROTOCOL=%u\nMSG_TYPE=%u\nCHECKTYPE=%u\nSEQ=%u\nRECV=%x\nSEND=%x\nLENGTH=%u\nCHECKSUM=%x\n\n",
-            frm->FRAGMENT,
-            frm->FINAL,
-            frm->PROTOCOL,
-            frm->MSG_TYPE,
-            frm->CHECKTYPE,
-            frm->SEQ_NUM,
-            frm->ADDR_RECV,
-            frm->ADDR_SEND,
-            frm->LENGTH,
-            frm->CHECKSUM);
+    // printf("FRAGMENT=%u\nFINAL=%u\nPROTOCOL=%u\nMSG_TYPE=%u\nCHECKTYPE=%u\nSEQ=%u\nSEND=%x\nRECV=%x\nLENGTH=%u\nCHECKSUM=%x\n\n",
+    //         frm->FRAGMENT,
+    //         frm->FINAL,
+    //         frm->PROTOCOL,
+    //         frm->MSG_TYPE,
+    //         frm->CHECKTYPE,
+    //         frm->SEQ_NUM,
+    //         frm->ADDR_SEND,
+    //         frm->ADDR_RECV,
+    //         frm->LENGTH,
+    //         frm->CHECKSUM);
 }
 
 static void __recv_frame(){
 
     // copy frame out of buffer
-    DLL_frame frm;
-    frm.frame     = dll.buf;
-    frm.frame_len = dll.buf_size;
+    DLL_frame* frm = (DLL_frame*) malloc(sizeof(DLL_frame));
+    frm->frame     = dll.buf;
+    frm->frame_len = dll.buf_size;
 
-    __deframe_dll(&frm);
+    __deframe_dll(frm);
 
     // Free resources in buffer after de-framing
     free(dll.buf);
     dll.buf       = NULL;
     dll.buf_size  = 0;
-    frm.frame     = NULL;
-    frm.frame_len = 0;
+    frm->frame     = NULL;
+    frm->frame_len = 0;
 
     // If frame address not that of the receiver, flush
-    if(frm.ADDR_RECV != DLL_MAC_RECV){
-        free(frm.PAYLOAD);
+    if(frm->ADDR_RECV != DLL_MAC_RECV){
+        free(frm->PAYLOAD);
         return;
     }
 
     // TODO: lock in a sender once a frame is already in the buffer
 
     // with this information, decide what to do
-    switch(frm.MSG_TYPE){
+    switch(frm->MSG_TYPE){
         case MSG:
             // if message, store at end of fragment buffer
-            __store_fragment(&frm);
+            __store_fragment(frm);
 
             // check that a complete packet is in the fragment buffer
             bool complete = __check_complete_pkt();
@@ -197,51 +199,37 @@ static void __recv_frame(){
 }
 
 static void __store_fragment(DLL_frame *frm){
-    size_t insert_frm_at = 0;
-    // TODO: shuffle and insert can be performed in one iteration: shuffle until match then insert
-    // get location in frmbuf to insert pointer at
-    printf("Iterating through frames:");
-    for(size_t f = 0; f < dll.frmbuf_size; ++f){
-        DLL_frame* frame_in_buf = dll.frmbuf[f];
-        printf("%u:",frame_in_buf->FRAGMENT);
-        if(frm->FRAGMENT > frame_in_buf->FRAGMENT){
-            insert_frm_at = f;
-            break;
-        }
-    }
-    printf("Insert Frame at:%u\n",insert_frm_at);
+    // Allocate heap for frame and store pointer away
+    dll.frmbuf[frm->FRAGMENT] = frm;
 
-    // expand frame buffer and shuffle pointers
-    // FIXME: Frame pointer shuffle broken
-    ++dll.frmbuf_size;
-    dll.frmbuf = (DLL_frame**) realloc(dll.frmbuf,dll.frmbuf_size * sizeof(DLL_frame*));
-    if(dll.frmbuf_size > 1){
-        for(size_t f = dll.frmbuf_size; f > insert_frm_at; --f){
-            dll.frmbuf[f] = dll.frmbuf[f-1];
-        }
+    for(size_t p = 0; p < DLL_MAX_FRAGMENTS; ++p){
+        // print_ptr(dll.frmbuf[p]);
     }
-    dll.frmbuf[insert_frm_at] = frm;
-
-    for(size_t p = 0; p < dll.frmbuf_size; ++p){
-        print_ptr(dll.frmbuf[p]);
-    }
-    printf("\n=====================\n");
+    // printf("=====================\n");
 }
 
 static bool __check_complete_pkt(){
-    return (dll.frmbuf[0]->FRAGMENT == 0  // first fragment in buffer is fragment 0
-         && dll.frmbuf[dll.frmbuf_size]->FINAL // last fragment in buffer is marked as final
-         && dll.frmbuf_size == dll.frmbuf[dll.frmbuf_size]->FRAGMENT); // num of fragments in buf == final fragment number
+    // Check for three conditions:
+    // Check for any null pointers, means fragment not present yet
+    // If no null pointers and reach a FINAL fragment, return true;
+    for(size_t f = 0; f < DLL_MAX_FRAGMENTS; ++f){
+        DLL_frame* frm = dll.frmbuf[f];
+        if(frm == NULL) { return false; }
+        if(frm->FINAL ) { return true;  } 
+    }
 }
 
 static NET_packet __reconstruct_pkt(){
     // iterate through the buffer
     // on each frame, take the frame length as the length needed to append bytes to the existing NET_packet buffer.
-    NET_packet pkt;
-    for(size_t f = 0; f < dll.frmbuf_size; ++f){
-        uint8_t* payload = dll.frmbuf[f]->PAYLOAD;
-        size_t payload_size = dll.frmbuf[f]->LENGTH;
-        append_bytes(&pkt.packet,&pkt.pkt_size,payload,payload_size);
+    NET_packet pkt = {NULL, 0};
+    for(size_t f = 0; f < DLL_MAX_FRAGMENTS; ++f){
+        append_bytes(&pkt.packet, &pkt.pkt_size,
+                     dll.frmbuf[f]->PAYLOAD,dll.frmbuf[f]->LENGTH);
+
+        if(dll.frmbuf[f]->FINAL){
+            break;
+        }
     }
     print_bytes(pkt.packet,pkt.pkt_size);
     return pkt;
