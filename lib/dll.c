@@ -18,14 +18,16 @@ void send_dll(NET_packet pkt){
     for(int f = 0; f < num_frames; ++f){
         // Specify all framing information, then pass to framing helper
         DLL_frame frm;
+        frm.frame = NULL;
+        frm.frame_len = 0;
 
         // CTRL Information
-        frm.FRAGMENT = f;
-        frm.FINAL = (f == num_frames-1);
-        frm.PROTOCOL = DLL_PROTOCOL;
-        frm.MSG_TYPE = MSG;
+        frm.FRAGMENT  = f;
+        frm.FINAL     = (f == num_frames-1);
+        frm.PROTOCOL  = DLL_PROTOCOL;
+        frm.MSG_TYPE  = MSG;
         frm.CHECKTYPE = DLL_CHECKSUM;
-        frm.SEQ_NUM = 0;
+        frm.SEQ_NUM   = 0;
 
         // ADDR Information
         frm.ADDR_SEND = DLL_MAC_SEND;
@@ -41,9 +43,7 @@ void send_dll(NET_packet pkt){
         __frame_dll(&frm);
 
         // hand frame to PHY for transmission
-        for(size_t f = 0; f < frm.frame_len; ++f){
-            send_phy(frm.frame[f], recv);
-        }
+        for(size_t f = 0; f < frm.frame_len; ++f){send_phy(frm.frame[f], recv);}
 
         // clean up and free resources after transmission
         free(frm.frame);
@@ -79,10 +79,10 @@ void recv_dll(uint8_t byte){
 // Helper to frame DLL after all frame information set
 void __frame_dll(DLL_frame* frm){
     // Generate CTRL subframe
-    uint16_t CTRL = __get_control_subframe(*frm);
-    uint8_t CTRL_HIGH = (CTRL & 0xFF00) >> 8;
-    uint8_t CTRL_LOW  = (CTRL)              ;
-    
+    uint16_t CTRL      = __get_control_subframe(frm);
+    uint8_t  CTRL_HIGH = (CTRL) >> 8;
+    uint8_t  CTRL_LOW  = (CTRL)     ;
+
     // Build pre-Escaped, pre-Delimited Frame
     append_byte(&frm->frame,&frm->frame_len,CTRL_HIGH);
     append_byte(&frm->frame,&frm->frame_len,CTRL_LOW);
@@ -92,101 +92,77 @@ void __frame_dll(DLL_frame* frm){
     append_bytes(&frm->frame,&frm->frame_len,frm->PAYLOAD,frm->LENGTH);
 
     // Append checksum of pre-Escaped, pre-Delimited Frame
-    uint16_t CHECKSUM = __get_checksum_subframe(frm->frame,frm->frame_len);
-    uint8_t CHECKSUM_HIGH = (CHECKSUM & 0xFF00) >> 8;
-    uint8_t CHECKSUM_LOW  = (CHECKSUM)              ;
+    uint16_t CHECKSUM     = __get_checksum_subframe(frm->frame,frm->frame_len);
+    uint8_t  CHECKSUM_HIGH = (CHECKSUM) >> 8;
+    uint8_t  CHECKSUM_LOW  = (CHECKSUM)     ;
 
     append_byte(&frm->frame,&frm->frame_len,CHECKSUM_HIGH);
     append_byte(&frm->frame,&frm->frame_len,CHECKSUM_LOW);
+
 
     // Build Escaped, pre-Delimited Frame
     __escape_frame(&frm->frame,&frm->frame_len);
 
     // Build Escaped, Delimited Frame
-    insert_byte(&frm->frame,&frm->frame_len,DLL_HEAD_BYTE);
-    append_byte(&frm->frame,&frm->frame_len,DLL_FOOT_BYTE);
+    insert_byte(&frm->frame,&frm->frame_len,DLL_HEAD_BYTE,0);
+    append_byte(&frm->frame,&frm->frame_len,DLL_FOOT_BYTE);   // Append Footer byte at end
+
 }
 
 // Helper to deframe DLL from byte stream and extract frame information
-DLL_frame __deframe_dll(uint8_t* frm, size_t frm_size){
-    
+void __deframe_dll(DLL_frame* frm){
+    // Get CTRL Information
+    uint8_t CTRL_HIGH = get_byte(frm->frame,frm->frame_len,0);
+    uint8_t CTRL_LOW  = get_byte(frm->frame,frm->frame_len,1);
+
+    frm->FRAGMENT  = (0xE0 & CTRL_HIGH) >> 5; // BBB00000
+    frm->FINAL     = (0x10 & CTRL_HIGH) >> 4; // 000B0000
+    frm->PROTOCOL  = (0x08 & CTRL_HIGH) >> 3; // 0000B000
+    frm->MSG_TYPE  = (0x06 & CTRL_HIGH) >> 1; // 00000BB0
+    frm->CHECKTYPE = (0x01 & CTRL_HIGH)     ; // 0000000B
+    frm->SEQ_NUM   = (0xFF & CTRL_LOW )     ; // BBBBBBBB
+
+    // Get ADDR information
+    frm->ADDR_RECV = get_byte(frm->frame,frm->frame_len,2);
+    frm->ADDR_SEND = get_byte(frm->frame,frm->frame_len,3);
+
+    // Get LENGTH information
+    frm->LENGTH  = get_byte(frm->frame,frm->frame_len,4);
+
+    // Get PAYLOAD
+    frm->PAYLOAD = get_bytes_from(frm->frame,frm->frame_len,5,frm->LENGTH);
+
+    uint8_t CHECKSUM_HIGH = get_byte(frm->frame,frm->frame_len,frm->frame_len-2);
+    uint8_t CHECKSUM_LOW  = get_byte(frm->frame,frm->frame_len,frm->frame_len-1);
+    frm->CHECKSUM = (uint16_t) ((CHECKSUM_HIGH << 8) | CHECKSUM_LOW);
 }
 
 static void __recv_frame(){
 
     // copy frame out of buffer
-    DLL_frame* frm = (DLL_frame*) malloc(sizeof(DLL_frame));
-    frm->frame = get_bytes_from(dll.buf,dll.buf_size,0,dll.buf_size);
-    frm->frame_len = dll.buf_size;
+    DLL_frame frm;
+    frm.frame = dll.buf;
+    frm.frame_len = dll.buf_size;
 
-    printf("\nRECEIVE HANDLES FRAME:\n");
-    print_bytes(dll.buf,dll.buf_size);
-    printf("\n");
+    __deframe_dll(&frm);
 
-    // clear buffer
-    free(dll.buf);
-    dll.buf = NULL;
-    dll.buf_size = 0;
-
-    // helper vars for indexes
-    frm->CTRL_HIGH     = 0;
-    frm->CTRL_LOW      = 1;
-    frm->ADDR_SEND     = 2;
-    frm->ADDR_RECV     = 3;
-    frm->LENGTH        = 4;
-    frm->PAYLOAD       = 5;
-    frm->CHECKSUM_HIGH = frm->frame_len - 2;
-    frm->CHECKSUM_LOW  = frm->frame_len - 1;
-
-    // validate the checksum to check if it's valid
-    uint8_t  CHECKSUM_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,frm->CHECKSUM_HIGH);
-    uint8_t  CHECKSUM_LOW_BYTE  = get_byte(frm->frame,frm->frame_len,frm->CHECKSUM_LOW);
-    uint16_t CHECKSUM           = CHECKSUM_HIGH_BYTE << 8 | CHECKSUM_LOW_BYTE;
-
-    // FIXME CRC16 different for subframe
-    uint8_t* check_bytes = get_bytes_range(frm->frame,frm->frame_len,0,frm->frame_len-2);
-    uint16_t CRC16       = __get_checksum_subframe(check_bytes,frm->frame_len-2);
-    if(CRC16 != CHECKSUM){ // invalid checksum, flush
-        free(frm->frame);
-        free(frm);
-        return;
-    }
-
-    // get control, addressing, length data
-    uint8_t CTRL_HIGH_BYTE = get_byte(frm->frame,frm->frame_len,frm->CTRL_HIGH);
-    uint8_t CTRL_LOW_BYTE  = get_byte(frm->frame,frm->frame_len,frm->CTRL_LOW);
-    uint8_t ADDR_SEND_BYTE = get_byte(frm->frame,frm->frame_len,frm->ADDR_SEND);
-    uint8_t ADDR_RECV_BYTE = get_byte(frm->frame,frm->frame_len,frm->ADDR_RECV);
-    uint8_t LENGTH_BYTE    = get_byte(frm->frame,frm->frame_len,frm->LENGTH);
-
-    if(ADDR_RECV_BYTE != DLL_MAC_RECV){ // not correct receiver, flush
-        free(frm->frame);
-        free(frm);
-        return;
-    }
+    // TODO: If not correct receiver flush
 
     // TODO: lock in a sender once a frame is already in the buffer
 
-    printf("%x%x\n",CTRL_HIGH_BYTE,CTRL_LOW_BYTE);
     // extract control data
-    uint8_t    FRAGMENT = (0xE0 & CTRL_HIGH_BYTE) >> 5; // BBB00000
-    bool       FINAL    = (0x10 & CTRL_HIGH_BYTE) >> 4; // 000B0000
-    bool       PROTOCOL = (0x08 & CTRL_HIGH_BYTE) >> 3; // 0000B000
-    frm_type_t MSG_TYPE = (0x06 & CTRL_HIGH_BYTE) >> 1; // 00000BB0
-    bool       CHECKTYP = (0x01 & CTRL_HIGH_BYTE)     ; // 0000000B
-    uint8_t    SEQ_NUM  = (0xFF & CTRL_LOW_BYTE )     ; // BBBBBBBB
 
-    printf("FRAGMENT:%u\nFINAL:%d\nPROTOCOL:%d\nMSG_TYPE:%d\nCHECKTYP:%d\nSEQ_NUM:%u\n",
-        FRAGMENT,
-        FINAL,
-        PROTOCOL,
-        MSG_TYPE,
-        CHECKTYP,
-        SEQ_NUM);
+    // printf("FRAGMENT:%u\nFINAL:%d\nPROTOCOL:%d\nMSG_TYPE:%d\nCHECKTYP:%d\nSEQ_NUM:%u\n",
+    //     FRAGMENT,
+    //     FINAL,
+    //     PROTOCOL,
+    //     MSG_TYPE,
+    //     CHECKTYP,
+    //     SEQ_NUM);
         
     // with this information, decide what to do
-    switch(MSG_TYPE){
-        case MSG:
+    // switch(MSG_TYPE){
+    //     case MSG:
             // if message, store at end of fragment buffer
             // __store_fragment(frm, FRAGMENT, SEQ_NUM, FINAL);
 
@@ -194,14 +170,14 @@ static void __recv_frame(){
 
             // if returns non-null, use returned vector to reconstruct NET pkt
 
-            break;
+            // break;
         // case ACK:
             // move sliding window
             // break;
         // case NACK:
             // queue packet resend
             // break;
-    }
+    // }
 }
 
 // TODO: check if sequence numbers match in with others before inserting or discard
@@ -334,15 +310,15 @@ static uint8_t** __get_pkt_fragments(uint8_t* len_fragments, uint8_t num_fragmen
     return fragments;
 }
 
-static uint16_t __get_control_subframe(DLL_frame frm){
+static uint16_t __get_control_subframe(DLL_frame* frm){
     uint16_t ctrl = 0;
     // modify from spec: 3-bit fragment, next bit 
-    ctrl |= frm.FRAGMENT << 13; // BBB00000-00000000
-    ctrl |= frm.FINAL    << 12; // 000B0000-00000000
+    ctrl |= frm->FRAGMENT << 13; // BBB00000-00000000
+    ctrl |= frm->FINAL    << 12; // 000B0000-00000000
     ctrl |= DLL_PROTOCOL << 11; // 0000B000-00000000
-    ctrl |= frm.MSG_TYPE << 9;  // 00000BB0-00000000
+    ctrl |= frm->MSG_TYPE << 9;  // 00000BB0-00000000
     ctrl |= DLL_CHECKSUM << 8;  // 0000000B-00000000
-    ctrl |= frm.SEQ_NUM;        // 00000000-BBBBBBBB
+    ctrl |= frm->SEQ_NUM;        // 00000000-BBBBBBBB
     return ctrl;
 }
 

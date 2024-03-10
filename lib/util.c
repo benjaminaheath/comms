@@ -56,8 +56,8 @@ void insert_byte(uint8_t** bytes, size_t* num_bytes, uint8_t byte, size_t insert
     *bytes = (uint8_t*) realloc(*bytes, (*num_bytes + 1) * sizeof(uint8_t));
     if(*bytes != NULL){
         //shuffle bytes after insert by 1 - start from end
-        for(size_t b = *num_bytes; b >= insert_index; --b){
-            (*bytes)[b+1] = (*bytes)[b];
+        for(size_t b = *num_bytes; b > insert_index; --b){
+            (*bytes)[b] = (*bytes)[b-1];
         }
         //insert byte
         (*bytes)[insert_index] = byte;
