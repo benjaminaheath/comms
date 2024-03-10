@@ -141,83 +141,53 @@ static void __recv_frame(){
 
     // copy frame out of buffer
     DLL_frame frm;
-    frm.frame = dll.buf;
+    frm.frame     = dll.buf;
     frm.frame_len = dll.buf_size;
 
     __deframe_dll(&frm);
 
-    // TODO: If not correct receiver flush
+    // Free resources in buffer after de-framing
+    free(dll.buf);
+    dll.buf       = NULL;
+    dll.buf_size  = 0;
+    frm.frame     = NULL;
+    frm.frame_len = 0;
+
+    // If frame address not that of the receiver, flush
+    if(frm.ADDR_RECV != DLL_MAC_RECV){
+        free(frm.PAYLOAD);
+        return;
+    }
 
     // TODO: lock in a sender once a frame is already in the buffer
 
-    // extract control data
-
-    // printf("FRAGMENT:%u\nFINAL:%d\nPROTOCOL:%d\nMSG_TYPE:%d\nCHECKTYP:%d\nSEQ_NUM:%u\n",
-    //     FRAGMENT,
-    //     FINAL,
-    //     PROTOCOL,
-    //     MSG_TYPE,
-    //     CHECKTYP,
-    //     SEQ_NUM);
-        
     // with this information, decide what to do
-    // switch(MSG_TYPE){
-    //     case MSG:
+    switch(frm.MSG_TYPE){
+        case MSG:
             // if message, store at end of fragment buffer
-            // __store_fragment(frm, FRAGMENT, SEQ_NUM, FINAL);
+            __store_fragment(frm);
 
-            // if final frame present, check for a complete packet
+            // check that a complete packet is in the fragment buffer
 
-            // if returns non-null, use returned vector to reconstruct NET pkt
+            // if yes, reconstruct packet and pass to NET layer
 
-            // break;
-        // case ACK:
+            break;
+        case ACK:
             // move sliding window
-            // break;
-        // case NACK:
+            break;
+        case NACK:
             // queue packet resend
-            // break;
-    // }
+            break;
+    }
 }
 
 // TODO: check if sequence numbers match in with others before inserting or discard
 // TODO: lock in a sender once one frame is in an discard others
 //       -- only allow frames to enter which have lower sequence numbers and lower fragments
 //       -- or, higher sequence numbers and higher fragments
-// static void __store_fragment(DLL_frame* frm, uint8_t fragment, uint8_t seq, bool final){
-    // // TODO: Check for sequence number before performing any append
+static void __store_fragment(DLL_frame frm){
 
-    // // increase size of frame buffer
-    // ++dll.frmbuf_size;
-    // dll.frmbuf = (DLL_frame**) realloc(dll.frmbuf,dll.frmbuf_size * sizeof(DLL_frame*));
-
-    // if(fragment == 0x0) { // check if first frame is stored
-        // dll.first_present = true;
-    // }
-
-    // if(final){ // if final fragment, always store at end
-        // dll.frmbuf[dll.frmbuf_size - 1] = *frm;
-        // dll.final_present = true;
-    // } else { // otherwise iterate through and store pointer in order
-        // uint8_t frag_insert_index = 0;
-        // for(size_t f = 0; f < dll.frmbuf_size; ++f){
-            // DLL_frame frm = dll.frmbuf[f]; 
-            // uint8_t buf_fragment = frm.frame[frm.CTRL_HIGH] & 0x7; 
-            // // find buffered fragment with higher fragment number than this
-            // if(buf_fragment > fragment){
-                // frag_insert_index = f;
-                // break;
-            // }
-        // }
-        // // now, work backwards and shuffle pointers to make room for insert
-        // for(size_t f = dll.frmbuf_size; f <= frag_insert_index; --f){
-            // dll.frmbuf[f] = dll.frmbuf[f-1];
-        // }
-        // dll.frmbuf[frag_insert_index] = *frm;
-    // }
-
-    // // if first and final present, set fragment count total for check
-// }
+}
 
 // if we know there's a first and a final, all we need check is the length of the buffer
 // static bool __check_complete_pkt(){
