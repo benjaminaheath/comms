@@ -160,12 +160,23 @@ static void __recv_frame(){
 
     __deframe_dll(frm);
 
+    // Get CRC16 of received frame
+    uint16_t RECV_CHECKSUM = __get_checksum_subframe(frm->frame,frm->frame_len-2);
+
+    printf("FRAME CRC16: %x RECV CRC16: %x\n",frm->CHECKSUM,RECV_CHECKSUM);
+    
     // Free resources in buffer after de-framing
     free(dll.buf);
     dll.buf       = NULL;
     dll.buf_size  = 0;
     frm->frame     = NULL;
     frm->frame_len = 0;
+
+    // If Checksum does not match, flush
+    if(frm->CHECKSUM != RECV_CHECKSUM){
+        free(frm->PAYLOAD);
+        return;
+    }
 
     // If frame address not that of the receiver, flush
     if(frm->ADDR_RECV != DLL_MAC_RECV){
