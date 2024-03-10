@@ -168,9 +168,12 @@ static void __recv_frame(){
             __store_fragment(&frm);
 
             // check that a complete packet is in the fragment buffer
+            bool complete = __check_complete_pkt();
 
             // if yes, reconstruct packet and pass to NET layer
-
+            if(complete){
+                NET_packet pkt = __reconstruct_pkt();
+            }
             break;
         case ACK:
             // move sliding window
@@ -201,37 +204,23 @@ static void __store_fragment(DLL_frame *frm){
     dll.frmbuf[insert_frm_at] = frm;
 }
 
-// if we know there's a first and a final, all we need check is the length of the buffer
-// static bool __check_complete_pkt(){
-//     // given that there is a first and a final frame, check for all fragments in sequence
-//     size_t total = 0;
-//     for(size_t f = 0; f < dll.frmbuf_size - 1; ++f){
-//         // get current and next frames
-//         DLL_frame cur_frm = dll.frmbuf[f];
-//         DLL_frame nxt_frm = dll.frmbuf[f+1];
-//         // get fragment numbers
-//         uint8_t cur_frag = cur_frm.frame[cur_frm.CTRL_HIGH] & 0x7;
-//         uint8_t nxt_frag = nxt_frm.frame[nxt_frm.CTRL_HIGH] & 0x7;
+static bool __check_complete_pkt(){
+    return (dll.frmbuf[0]->FRAGMENT == 0  // first fragment in buffer is fragment 0
+         && dll.frmbuf[dll.frmbuf_size]->FINAL // last fragment in buffer is marked as final
+         && dll.frmbuf_size == dll.frmbuf[dll.frmbuf_size]->FRAGMENT); // num of fragments in buf == final fragment number
+}
 
-//         if(nxt_frag != cur_frag + 1){ // frame fragments are non-sequential
-//             return false;
-//         }
-//     }
-//     return true;
-// }
-
-// static NET_packet __reconstruct_pkt(){
-//     // iterate through the buffer
-//     // on each frame, take the frame length as the length needed to append bytes to the existing NET_packet buffer.
-//     NET_packet pkt;
-//     pkt.packet = NULL;
-//     pkt.pkt_size = 0;
-//     for(size_t f = 0; f < pkt.pkt_size; ++f){
-//         DLL_frame frm = dll.frmbuf[f];
-//         append_bytes(&pkt.packet,&pkt.pkt_size,frm.frame,frm.frame_len);
-//     }
-//     return pkt;
-// }
+static NET_packet __reconstruct_pkt(){
+    // iterate through the buffer
+    // on each frame, take the frame length as the length needed to append bytes to the existing NET_packet buffer.
+    NET_packet pkt;
+    for(size_t f = 0; f < dll.frmbuf_size; ++f){
+        uint8_t* payload = dll.frmbuf[f]->PAYLOAD;
+        size_t payload_size = dll.frmbuf[f]->LENGTH;
+        append_bytes(&pkt.packet,&pkt.pkt_size,payload,payload_size);
+    }
+    return pkt;
+}
 
 void service_dll(){
 
