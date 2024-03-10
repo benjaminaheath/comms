@@ -165,7 +165,7 @@ static void __recv_frame(){
     switch(frm.MSG_TYPE){
         case MSG:
             // if message, store at end of fragment buffer
-            __store_fragment(frm);
+            __store_fragment(&frm);
 
             // check that a complete packet is in the fragment buffer
 
@@ -181,12 +181,24 @@ static void __recv_frame(){
     }
 }
 
-// TODO: check if sequence numbers match in with others before inserting or discard
-// TODO: lock in a sender once one frame is in an discard others
-//       -- only allow frames to enter which have lower sequence numbers and lower fragments
-//       -- or, higher sequence numbers and higher fragments
-static void __store_fragment(DLL_frame frm){
+static void __store_fragment(DLL_frame *frm){
+    size_t insert_frm_at;
+    // TODO: shuffle and insert can be performed in one iteration: shuffle until match then insert
+    // get location in frmbuf to insert pointer at
+    for(size_t f = 0; f , dll.frmbuf_size; ++f){
+        DLL_frame* frame_in_buf = dll.frmbuf[f];
+        if(frm->FRAGMENT > frame_in_buf->FRAGMENT){
+            insert_frm_at = f;
+        }
+    }
 
+    // expand frame buffer and shuffle pointers
+    ++dll.frmbuf_size;
+    dll.frmbuf = (DLL_frame**) realloc(dll.frmbuf,dll.frmbuf_size * sizeof(DLL_frame*));
+    for(size_t f = dll.frmbuf_size; f > insert_frm_at; --f){
+        dll.frmbuf[f] = dll.frmbuf[f-1];
+    }
+    dll.frmbuf[insert_frm_at] = frm;
 }
 
 // if we know there's a first and a final, all we need check is the length of the buffer
